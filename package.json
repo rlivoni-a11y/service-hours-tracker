@@ -1,0 +1,16 @@
+{
+  "name": "service-hours-tracker",
+  "version": "1.0.0",
+  "description": "Tempe High School Service Hours Tracker",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "better-sqlite3": "^9.4.3"
+  },
+  "engines": {
+    "node": "16.x"
+  }
+}
