@@ -229,7 +229,25 @@ app.post("/api/bulk", (req, res) => {
 
   res.json({ success: true, count: students.length });
 });
-
+// ── Roster Upload ──
+app.post("/api/roster", (req, res) => {
+  const { students } = req.body;
+  if (!Array.isArray(students) || students.length === 0) {
+    return res.status(400).json({ error: "No students provided" });
+  }
+  const insertStudent = db.prepare("INSERT OR REPLACE INTO students (id, name) VALUES (?, ?)");
+  let count = 0;
+  const transaction = db.transaction(() => {
+    students.forEach(s => {
+      if (s && s.id && s.name) {
+        insertStudent.run(String(s.id).trim(), String(s.name).trim());
+        count++;
+      }
+    });
+  });
+  transaction();
+  res.json({ success: true, count });
+});
 // ── Settings ──
 app.post("/api/verify-pin", (req, res) => {
   const { type, pin } = req.body;
