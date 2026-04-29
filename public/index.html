@@ -1,847 +1,590 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Service Hours Tracker — Tempe High</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service Hours Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --blue: #004374;
-    --blue-dark: #002a4a;
-    --blue-light: #0a5a9e;
-    --white: #ffffff;
-    --silver: #b8c4d0;
-    --silver-light: #dce3ea;
-    --silver-dark: #8494a7;
-    --red: #c0392b;
-    --green: #27ae60;
-    --green-light: #2ecc71;
-    --amber: #f39c12;
+    --navy: #001a3a; --blue: #004374; --silver: #c8d3e0; --silver-light: #e8eef5;
+    --white: #f8f6f1; --gray: #8a9bb0; --gray-light: #c8d3e0;
+    --red: #c0392b; --green: #27ae60; --green-light: #2ecc71;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'DM Sans', 'Segoe UI', sans-serif;
     min-height: 100vh;
-    background: linear-gradient(160deg, var(--blue-dark) 0%, var(--blue) 40%, var(--blue-light) 100%);
+    background: linear-gradient(145deg, var(--navy) 0%, #002a55 50%, var(--blue) 100%);
     color: var(--white);
-    padding-bottom: 40px;
   }
-  .container { max-width: 960px; margin: 0 auto; padding: 0 16px; }
   .header { text-align: center; padding: 28px 20px 10px; }
-  .header h1 {
-    font-size: 26px; font-weight: 800; color: var(--white);
-    text-transform: uppercase; letter-spacing: .8px;
-  }
-  .header .subtitle {
-    font-size: 11px; color: var(--silver); margin-top: 4px;
-    letter-spacing: 2.5px; text-transform: uppercase;
-  }
-  .header .school {
-    font-size: 13px; color: var(--silver-light); margin-top: 8px;
-    font-weight: 500;
-  }
-  .nav {
-    display: flex; justify-content: center; gap: 6px;
-    padding: 8px 12px 18px; flex-wrap: wrap;
-  }
+  .header h1 { font-size: 24px; font-weight: 800; color: var(--white); text-transform: uppercase; letter-spacing: -0.3px; }
+  .header p { font-size: 11px; color: var(--silver); margin-top: 3px; letter-spacing: 2.5px; text-transform: uppercase; }
+  .header .school { font-size: 12px; color: var(--silver-light); margin-top: 6px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; }
+  .nav { display: flex; justify-content: center; gap: 6px; padding: 8px 12px 18px; flex-wrap: wrap; }
   .nav-btn {
-    padding: 8px 16px; border-radius: 22px; font-size: 12px;
-    font-weight: 700; cursor: pointer; text-transform: uppercase;
-    letter-spacing: .8px; border: 1.5px solid rgba(255,255,255,.25);
-    background: transparent; color: var(--silver);
-    transition: all .15s; font-family: inherit;
+    padding: 7px 15px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    cursor: pointer; text-transform: uppercase; letter-spacing: 0.8px;
+    border: 1.5px solid rgba(255,255,255,0.2); background: transparent; color: var(--silver);
+    transition: all 0.15s; font-family: inherit;
   }
-  .nav-btn:hover { border-color: rgba(255,255,255,.6); color: var(--white); }
-  .nav-btn.active {
-    border-color: var(--white); background: var(--white); color: var(--blue);
-  }
+  .nav-btn.active { border-color: var(--white); background: var(--white); color: var(--navy); }
   .card {
-    background: rgba(255,255,255,.08);
-    backdrop-filter: blur(12px);
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,.12);
-    padding: 22px;
-    margin-bottom: 18px;
+    background: rgba(255,255,255,0.06); backdrop-filter: blur(12px);
+    border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);
+    padding: 22px; margin: 0 auto 14px; max-width: 620px;
   }
-  .card h2 {
-    font-size: 16px; font-weight: 700; margin-bottom: 14px;
-    text-transform: uppercase; letter-spacing: 1px;
-    color: var(--white);
-    border-left: 3px solid var(--silver-light);
-    padding-left: 10px;
+  .card h2 { font-size: 19px; font-weight: 700; margin-bottom: 18px; }
+  .label { display: block; font-size: 11px; color: var(--silver); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
+  input[type="text"], input[type="password"], input[type="number"], input[type="date"], select, textarea {
+    width: 100%; padding: 13px 14px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3);
+    color: var(--white); font-size: 15px; font-family: inherit; outline: none; margin-bottom: 10px;
   }
-  .card h3 {
-    font-size: 13px; font-weight: 700; margin: 18px 0 10px;
-    text-transform: uppercase; letter-spacing: 1.2px;
-    color: var(--silver-light);
+  textarea { font-family: 'Courier New', monospace; font-size: 13px; resize: vertical; min-height: 120px; }
+  select { appearance: none; }
+  input[type="date"] { color-scheme: dark; }
+  .btn-primary {
+    width: 100%; padding: 15px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, var(--silver-light), var(--white));
+    color: var(--navy); font-size: 15px; font-weight: 800; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; font-family: inherit;
   }
-  label {
-    display: block; font-size: 11px; font-weight: 700;
-    color: var(--silver-light); margin-bottom: 6px;
-    text-transform: uppercase; letter-spacing: 1px;
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-outline {
+    padding: 6px 14px; border-radius: 8px; border: 1.5px solid var(--silver);
+    background: transparent; color: var(--silver-light); font-size: 12px;
+    font-weight: 700; cursor: pointer; letter-spacing: 0.5px; font-family: inherit;
   }
-  input, select, textarea {
-    width: 100%; padding: 11px 14px; border-radius: 10px;
-    border: 1px solid rgba(255,255,255,.2);
-    background: rgba(0,0,0,.25); color: var(--white);
-    font-size: 14px; font-family: inherit;
-    margin-bottom: 12px;
-  }
-  input:focus, select:focus, textarea:focus {
-    outline: none; border-color: var(--silver-light);
-    background: rgba(0,0,0,.35);
-  }
-  input::placeholder { color: var(--silver-dark); }
-  select option { background: var(--blue-dark); color: var(--white); }
-  .btn {
-    padding: 12px 22px; border-radius: 10px; border: none;
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    text-transform: uppercase; letter-spacing: 1px;
-    font-family: inherit; transition: transform .1s, box-shadow .15s;
-  }
-  .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,.25); }
-  .btn:active { transform: translateY(0); }
-  .btn-primary { background: var(--white); color: var(--blue); }
-  .btn-secondary { background: rgba(255,255,255,.15); color: var(--white); border: 1px solid rgba(255,255,255,.3); }
-  .btn-success { background: var(--green); color: var(--white); }
-  .btn-danger { background: var(--red); color: var(--white); }
-  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .btn-row .btn { flex: 1; min-width: 130px; }
-  .stat-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px; margin-bottom: 16px;
-  }
-  .stat {
-    background: rgba(0,0,0,.25); border-radius: 12px; padding: 14px;
-    text-align: center; border: 1px solid rgba(255,255,255,.08);
-  }
-  .stat-num { font-size: 26px; font-weight: 800; color: var(--white); }
-  .stat-label {
-    font-size: 10px; color: var(--silver); text-transform: uppercase;
-    letter-spacing: 1.2px; margin-top: 4px; font-weight: 600;
-  }
-  table {
-    width: 100%; border-collapse: collapse; margin-top: 10px;
-    font-size: 13px;
-  }
-  th {
-    background: rgba(0,0,0,.3); color: var(--silver-light);
-    padding: 10px 8px; text-align: left; font-weight: 700;
-    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-    border-bottom: 1px solid rgba(255,255,255,.15);
-  }
-  td {
-    padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,.08);
-    color: var(--white);
-  }
-  tr:hover td { background: rgba(255,255,255,.05); }
-  .badge {
-    display: inline-block; padding: 3px 9px; border-radius: 10px;
-    font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .8px;
-  }
-  .badge-in { background: var(--green); color: var(--white); }
-  .badge-out { background: var(--silver-dark); color: var(--white); }
-  .badge-active { background: var(--amber); color: var(--blue-dark); }
-  .flash {
-    position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
-    padding: 12px 22px; border-radius: 10px; font-weight: 700;
-    z-index: 999; box-shadow: 0 8px 20px rgba(0,0,0,.35);
-    font-size: 13px; opacity: 0; transition: opacity .2s;
-    pointer-events: none;
-  }
-  .flash.show { opacity: 1; }
-  .flash.success { background: var(--green); color: var(--white); }
-  .flash.error { background: var(--red); color: var(--white); }
-  .loading {
-    position: fixed; inset: 0; background: rgba(0,0,0,.5);
-    display: none; align-items: center; justify-content: center;
-    z-index: 998;
-  }
-  .loading.show { display: flex; }
-  .spinner {
-    width: 42px; height: 42px;
-    border: 3px solid rgba(255,255,255,.2);
-    border-top-color: var(--white);
-    border-radius: 50%;
-    animation: spin .8s linear infinite;
-  }
+  .btn-outline.red { border-color: var(--red); color: var(--red); }
+  .btn-outline.gray { border-color: var(--gray); color: var(--gray); }
+  .btn-outline.active { background: rgba(232,238,245,0.15); }
+  .btn-danger { padding: 10px 20px; border-radius: 10px; border: none; background: var(--red); color: white; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .btn-green { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--green); color: white; font-size: 14px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; font-family: inherit; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge.green { background: rgba(39,174,96,0.2); color: var(--green-light); }
+  .badge.silver { background: rgba(232,238,245,0.2); color: var(--silver-light); }
+  .badge.gray-b { background: rgba(138,155,176,0.2); color: var(--gray); }
+  .club-toggle { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: var(--gray); font-family: inherit; }
+  .club-toggle.selected { border-color: var(--silver-light); background: rgba(232,238,245,0.15); color: var(--white); }
+  .alert { max-width: 620px; margin: 0 auto 8px; padding: 12px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; }
+  .alert.success { background: rgba(39,174,96,0.15); border: 1px solid rgba(39,174,96,0.3); color: var(--green-light); }
+  .alert.error { background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.3); color: #e74c3c; }
+  .divider { border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
+  .flex { display: flex; gap: 8px; flex-wrap: wrap; }
+  .flex-col { display: flex; flex-direction: column; gap: 8px; }
+  .mb { margin-bottom: 12px; }
+  .mt { margin-top: 16px; }
+  .text-center { text-align: center; }
+  .text-gray { color: var(--gray); }
+  .text-sm { font-size: 13px; }
+  .text-xs { font-size: 11px; }
+  .fw600 { font-weight: 600; }
+  .fw700 { font-weight: 700; }
+  .hidden { display: none; }
+  .dark-box { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+  .highlight-box { padding: 12px 16px; background: rgba(232,238,245,0.1); border-radius: 10px; }
+  .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,26,58,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
+  .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--silver-light); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .hide { display: none !important; }
-  .empty {
-    text-align: center; color: var(--silver);
-    padding: 30px 16px; font-size: 13px; font-style: italic;
-  }
-  .pin-screen {
-    max-width: 380px; margin: 60px auto; text-align: center;
-  }
-  .pin-screen input {
-    text-align: center; font-size: 22px; letter-spacing: 8px;
-    font-weight: 700;
-  }
-  .small-text { font-size: 11px; color: var(--silver); margin-top: 8px; }
-  .roster-row {
-    display: flex; gap: 10px; align-items: center;
-    padding: 8px 10px; background: rgba(0,0,0,.2);
-    border-radius: 8px; margin-bottom: 6px;
-  }
-  .roster-row .name { flex: 1; font-weight: 600; }
-  .roster-row .id { color: var(--silver); font-size: 12px; }
-  .roster-row button {
-    background: var(--red); color: var(--white); border: none;
-    padding: 6px 10px; border-radius: 6px; font-size: 11px;
-    font-weight: 700; cursor: pointer; text-transform: uppercase;
-  }
-  .event-row {
-    background: rgba(0,0,0,.2); border-radius: 10px;
-    padding: 12px 14px; margin-bottom: 8px;
-  }
-  .event-row .event-name { font-weight: 700; font-size: 14px; }
-  .event-row .event-meta {
-    font-size: 12px; color: var(--silver); margin-top: 4px;
-  }
-  .event-row .event-actions {
-    display: flex; gap: 8px; margin-top: 10px;
-  }
-  .event-row .event-actions button {
-    padding: 6px 10px; border-radius: 6px; font-size: 11px;
-    font-weight: 700; border: none; cursor: pointer;
-    text-transform: uppercase; letter-spacing: .5px;
-  }
-  .event-row .btn-edit { background: rgba(255,255,255,.2); color: var(--white); }
-  .event-row .btn-del { background: var(--red); color: var(--white); }
-  .footer-credit {
-    text-align: center; color: var(--silver-dark); font-size: 11px;
-    margin-top: 24px; letter-spacing: 1.5px; text-transform: uppercase;
-  }
-  @media (max-width: 600px) {
-    .header h1 { font-size: 20px; }
-    table { font-size: 12px; }
-    th, td { padding: 7px 5px; }
-  }
+  .loading-text { color: var(--silver); font-size: 13px; margin-top: 14px; letter-spacing: 1px; }
+  .tab-bar { display: flex; gap: 5px; margin-bottom: 18px; flex-wrap: wrap; }
+  .tab-btn { padding: 5px 12px; border-radius: 8px; border: 1.5px solid var(--silver); background: transparent; color: var(--silver-light); font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .tab-btn.active { background: var(--silver-light); color: var(--navy); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 9px 7px; border-bottom: 2px solid var(--silver); color: var(--silver-light); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+  td { padding: 9px 7px; border-bottom: 1px solid rgba(255,255,255,0.06); color: var(--white); vertical-align: middle; font-size: 13px; }
+  .suggestion-btn { padding: 5px 12px; border-radius: 8px; border: 1.5px solid var(--silver); background: transparent; color: var(--silver-light); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .student-chip { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 12px; background: rgba(39,174,96,0.2); color: var(--green-light); font-size: 11px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
+  .footer { text-align: center; padding: 28px; color: rgba(138,155,176,0.5); font-size: 10px; letter-spacing: 1.5px; }
 </style>
 </head>
 <body>
-<div class="loading" id="loading"><div class="spinner"></div></div>
-<div class="flash" id="flash"></div>
+
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">LOADING...</div>
+</div>
+
+<div id="alertBox" class="alert hidden" style="margin-top:8px;"></div>
 
 <div class="header">
   <h1>Service Hours Tracker</h1>
-  <div class="subtitle">Key Club &middot; Buffaloes</div>
+  <p>Home of the Buffaloes</p>
   <div class="school">Tempe High School</div>
 </div>
 
-<div class="container">
-
-<!-- ─────────── PIN SCREEN ─────────── -->
-<div id="pin-screen" class="card pin-screen">
-  <h2 style="border:none;padding:0;text-align:center;">Enter PIN</h2>
-  <input type="password" id="pin-input" placeholder="••••" maxlength="20" inputmode="numeric">
-  <button class="btn btn-primary" style="width:100%;" onclick="checkPin()">Continue</button>
-  <div class="small-text">Officers can sign students in/out. Admins manage roster, events, and exports.</div>
+<div class="nav">
+  <button class="nav-btn active" data-view="checkin" onclick="switchView('checkin')">Check In</button>
+  <button class="nav-btn" data-view="checkout" onclick="switchView('checkout')">Check Out</button>
+  <button class="nav-btn" data-view="hours" onclick="switchView('hours')">My Hours</button>
+  <button class="nav-btn" data-view="officer" onclick="switchView('officer')">Officer</button>
+  <button class="nav-btn" data-view="admin" onclick="switchView('admin')">Admin</button>
 </div>
 
-<!-- ─────────── MAIN APP ─────────── -->
-<div id="app" class="hide">
+<div style="padding:0 12px;">
 
-  <div class="nav">
-    <button class="nav-btn active" data-tab="signin" onclick="showTab('signin')">Sign In/Out</button>
-    <button class="nav-btn" data-tab="active" onclick="showTab('active')">Active</button>
-    <button class="nav-btn" data-tab="hours" onclick="showTab('hours')">Hours</button>
-    <button class="nav-btn admin-only hide" data-tab="roster" onclick="showTab('roster')">Roster</button>
-    <button class="nav-btn admin-only hide" data-tab="events" onclick="showTab('events')">Events</button>
-    <button class="nav-btn admin-only hide" data-tab="admin" onclick="showTab('admin')">Admin</button>
-    <button class="nav-btn" onclick="logout()" style="border-color:rgba(255,100,100,.5);color:#ffb3b3;">Logout</button>
+<div id="view-checkin" class="card">
+  <h2>Check In</h2>
+  <label class="label">Your Name</label>
+  <input type="text" id="ci-name" placeholder="Full name" oninput="showSuggestions()">
+  <div id="ci-suggestions" class="flex mb hidden"></div>
+  <label class="label">Student ID</label>
+  <input type="text" id="ci-id" placeholder="Student ID number">
+  <label class="label">Logging hours for</label>
+  <div id="ci-clubs" class="flex mb"></div>
+  <label class="label">Event</label>
+  <div id="ci-event-select-wrap">
+    <select id="ci-event"><option value="">Select an event...</option></select>
+    <button class="btn-outline mb" onclick="toggleCustomEvent(true)">+ Custom event</button>
   </div>
-
-  <!-- ─────── SIGN IN/OUT TAB ─────── -->
-  <div id="tab-signin" class="tab">
-    <div class="card">
-      <h2>Sign Student In or Out</h2>
-      <label for="signin-event">Event</label>
-      <select id="signin-event"></select>
-      <label for="signin-student">Student</label>
-      <select id="signin-student"></select>
-      <div class="btn-row" style="margin-top:6px;">
-        <button class="btn btn-success" onclick="doSignIn()">Sign In</button>
-        <button class="btn btn-secondary" onclick="doSignOut()">Sign Out</button>
-      </div>
-      <div class="small-text" style="margin-top:14px;">
-        Choose the event and student, then tap Sign In to start their hours or Sign Out to close them.
-      </div>
-    </div>
+  <div id="ci-event-custom-wrap" class="hidden">
+    <input type="text" id="ci-custom-event" placeholder="Type event name">
+    <button class="btn-outline mb" onclick="toggleCustomEvent(false)">← Pick from list</button>
   </div>
-
-  <!-- ─────── ACTIVE TAB ─────── -->
-  <div id="tab-active" class="tab hide">
-    <div class="card">
-      <h2>Currently Signed In</h2>
-      <div id="active-list"></div>
-    </div>
-  </div>
-
-  <!-- ─────── HOURS TAB ─────── -->
-  <div id="tab-hours" class="tab hide">
-    <div class="card">
-      <h2>Hours Summary</h2>
-      <label for="hours-club">Club / Group Filter</label>
-      <select id="hours-club" onchange="renderHours()"></select>
-      <div class="stat-grid" id="hours-stats"></div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr><th>Student</th><th>ID</th><th>Total Hours</th><th>Events</th></tr>
-          </thead>
-          <tbody id="hours-tbody"></tbody>
-        </table>
-      </div>
-      <div class="btn-row" style="margin-top:16px;">
-        <button class="btn btn-primary" onclick="exportHours()">Export Hours CSV</button>
-        <button class="btn btn-secondary" onclick="exportLog()">Export Full Log CSV</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ─────── ROSTER TAB (admin) ─────── -->
-  <div id="tab-roster" class="tab hide">
-    <div class="card">
-      <h2>Roster</h2>
-      <h3>Add Student</h3>
-      <label>First Name</label>
-      <input id="new-first" placeholder="First name">
-      <label>Last Name</label>
-      <input id="new-last" placeholder="Last name">
-      <label>Student ID</label>
-      <input id="new-id" placeholder="e.g. 27100074" inputmode="numeric">
-      <label>Club / Group</label>
-      <input id="new-club" placeholder="e.g. Key Club" list="club-suggestions">
-      <datalist id="club-suggestions"></datalist>
-      <button class="btn btn-primary" onclick="addStudent()">Add to Roster</button>
-
-      <h3>Bulk Import (paste CSV)</h3>
-      <div class="small-text" style="margin-bottom:8px;">
-        Format: First Name, Last Name, Student ID, Club (one per line)
-      </div>
-      <textarea id="bulk-roster" rows="5" placeholder="Yareli, Lopez, 27100074, Key Club"></textarea>
-      <button class="btn btn-secondary" onclick="bulkImport()">Import All</button>
-
-      <h3>Current Roster</h3>
-      <input id="roster-search" placeholder="Search by name or ID..." oninput="renderRoster()">
-      <div id="roster-list" style="margin-top:10px;"></div>
-    </div>
-  </div>
-
-  <!-- ─────── EVENTS TAB (admin) ─────── -->
-  <div id="tab-events" class="tab hide">
-    <div class="card">
-      <h2>Events</h2>
-      <h3>Add Event</h3>
-      <label>Event Name</label>
-      <input id="event-name" placeholder="e.g. Suzy Foundation Walk">
-      <label>Date</label>
-      <input id="event-date" type="date">
-      <button class="btn btn-primary" onclick="addEvent()">Add Event</button>
-
-      <h3>All Events</h3>
-      <div id="events-list"></div>
-    </div>
-  </div>
-
-  <!-- ─────── ADMIN TAB ─────── -->
-  <div id="tab-admin" class="tab hide">
-    <div class="card">
-      <h2>Settings &amp; Data</h2>
-      <h3>Change PINs</h3>
-      <label>New Admin PIN</label>
-      <input type="password" id="set-admin-pin" placeholder="At least 4 characters">
-      <button class="btn btn-secondary" onclick="updatePin('admin')">Update Admin PIN</button>
-
-      <label style="margin-top:14px;">New Officer PIN</label>
-      <input type="password" id="set-officer-pin" placeholder="At least 4 characters">
-      <button class="btn btn-secondary" onclick="updatePin('officer')">Update Officer PIN</button>
-
-      <h3 style="color:#ffb3b3;">Danger Zone</h3>
-      <div class="small-text" style="margin-bottom:10px;">
-        Always export data before clearing. These actions cannot be undone.
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-danger" onclick="clearLogsOnly()">Clear Logs Only</button>
-        <button class="btn btn-danger" onclick="resetAllData()">Reset All Data</button>
-      </div>
-    </div>
-  </div>
-
+  <button class="btn-primary" onclick="doCheckIn()">Check In</button>
 </div>
 
-<div class="footer-credit">Tempe High &middot; Home of the Buffaloes</div>
+<div id="view-checkout" class="card hidden">
+  <h2>Check Out</h2>
+  <label class="label">Your Student ID</label>
+  <input type="text" id="co-id" placeholder="Student ID number" oninput="showOpenLogs()">
+  <div id="co-checkout-all" class="hidden mb"></div>
+  <div id="co-my-open"></div>
+  <div id="co-all-open" class="mt"></div>
 </div>
+
+<div id="view-hours" class="card hidden">
+  <h2>My Hours</h2>
+  <label class="label">Your Student ID</label>
+  <input type="text" id="hrs-id" placeholder="Student ID number" oninput="showMyHours()">
+  <div id="hrs-club-filters" class="flex mb hidden"></div>
+  <div id="hrs-total" class="hidden"></div>
+  <div id="hrs-list"></div>
+</div>
+
+<div id="view-officer" class="card hidden">
+  <div id="officer-login">
+    <h2>Officer Access</h2>
+    <label class="label">Officer PIN</label>
+    <input type="password" id="officer-pin" placeholder="Enter officer PIN" onkeydown="if(event.key==='Enter')officerLogin()">
+    <button class="btn-primary" onclick="officerLogin()">Unlock</button>
+  </div>
+  <div id="officer-dashboard" class="hidden">
+    <div class="row mb"><h2 style="margin:0">Officer Dashboard</h2><button class="btn-outline" onclick="officerLogout()">Lock</button></div>
+    <div class="dark-box">
+      <div class="label" style="margin-bottom:10px">Create Event</div>
+      <input type="text" id="off-event-name" placeholder="Event name">
+      <label class="label">For which club(s)</label>
+      <div id="off-event-clubs" class="flex mb"></div>
+      <button class="btn-primary" style="margin-top:0" onclick="officerAddEvent()">Create Event</button>
+    </div>
+    <div class="label mb" style="margin-top:12px">Active Events</div>
+    <div id="off-active-events"></div>
+    <div class="mt"><div class="label mb">Export Hours</div><div id="off-export-btns" class="flex"></div></div>
+  </div>
+</div>
+
+<div id="view-admin" class="card hidden">
+  <div id="admin-login">
+    <h2>Admin Access</h2>
+    <label class="label">Admin PIN</label>
+    <input type="password" id="admin-pin" placeholder="Admin PIN" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="btn-primary" onclick="adminLogin()">Unlock</button>
+  </div>
+  <div id="admin-dashboard" class="hidden">
+    <div class="row" style="margin-bottom:16px"><h2 style="margin:0">Admin Dashboard</h2><button class="btn-outline" onclick="adminLogout()">Lock</button></div>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="clubs" onclick="switchAdminTab('clubs')">Clubs</button>
+      <button class="tab-btn" data-tab="events" onclick="switchAdminTab('events')">Events</button>
+      <button class="tab-btn" data-tab="logs" onclick="switchAdminTab('logs')">Logs</button>
+      <button class="tab-btn" data-tab="bulk" onclick="switchAdminTab('bulk')">Bulk Hours</button>
+      <button class="tab-btn" data-tab="students" onclick="switchAdminTab('students')">Students</button>
+      <button class="tab-btn" data-tab="roster" onclick="switchAdminTab('roster')">Roster Upload</button>
+      <button class="tab-btn" data-tab="export" onclick="switchAdminTab('export')">Export</button>
+      <button class="tab-btn" data-tab="settings" onclick="switchAdminTab('settings')">Settings</button>
+    </div>
+    <div id="admin-tab-clubs">
+      <div class="flex mb"><input type="text" id="adm-new-club" placeholder="New club name" style="flex:1;margin-bottom:0" onkeydown="if(event.key==='Enter')adminAddClub()"><button class="btn-primary" style="width:auto;padding:12px 20px;margin-top:0" onclick="adminAddClub()">Add</button></div>
+      <div id="adm-club-list"></div>
+    </div>
+    <div id="admin-tab-events" class="hidden">
+      <div class="dark-box"><input type="text" id="adm-new-event" placeholder="New event name"><label class="label">For which club(s)</label><div id="adm-event-clubs" class="flex mb"></div><button class="btn-primary" style="margin-top:0" onclick="adminAddEvent()">Create Event</button></div>
+      <div id="adm-event-list"></div>
+    </div>
+    <div id="admin-tab-logs" class="hidden">
+      <div id="adm-log-filter-bar" class="flex mb"></div>
+      <button class="btn-outline mb" onclick="forceCheckOutAll()">Force Check Out All</button>
+      <div id="adm-log-list" style="overflow-x:auto"></div>
+    </div>
+    <div id="admin-tab-bulk" class="hidden">
+      <p class="text-gray text-sm mb">Award hours to multiple students at once without them needing to check in.</p>
+      <label class="label">Club</label><select id="bulk-club"><option value="">Select club...</option></select>
+      <label class="label">Event Name</label><input type="text" id="bulk-event" placeholder="e.g. Campus Cleanup">
+      <div class="flex"><div style="flex:1"><label class="label">Hours</label><input type="number" id="bulk-hours" step="0.25" placeholder="2.5"></div><div style="flex:1"><label class="label">Date</label><input type="date" id="bulk-date"></div></div>
+      <label class="label">Select Students</label><input type="text" id="bulk-search" placeholder="Search by name or ID..." oninput="showBulkSearch()">
+      <div id="bulk-search-results" class="flex mb"></div>
+      <div id="bulk-select-all-wrap" class="mb"></div>
+      <div id="bulk-selected" class="mb"></div>
+      <button class="btn-primary" onclick="submitBulkHours()">Add Entries</button>
+    </div>
+    <div id="admin-tab-students" class="hidden"><div id="adm-student-list"></div></div>
+    <div id="admin-tab-roster" class="hidden">
+      <p class="text-gray text-sm mb">Paste your roster from a spreadsheet. Each row should have <strong>Name</strong> in one column and <strong>Student ID</strong> in another (tab-separated, the way it copies from Excel/Google Sheets).</p>
+      <div class="dark-box" style="margin-bottom:14px;">
+        <div class="text-xs text-gray fw600" style="margin-bottom:6px;">EXAMPLE</div>
+        <code style="display:block;font-size:12px;color:var(--silver-light);white-space:pre;line-height:1.6;">Lopez, Yareli&#9;27100074
+McWhirter, Vincent&#9;28100140
+Gonzales, Reva&#9;26100230</code>
+      </div>
+      <label class="label">Paste Roster</label>
+      <textarea id="roster-paste" placeholder="Paste rows from your spreadsheet here..." rows="8"></textarea>
+      <div class="flex mb">
+        <button class="btn-outline" onclick="previewRoster()">Preview</button>
+        <button class="btn-outline gray" onclick="document.getElementById('roster-paste').value='';document.getElementById('roster-preview').innerHTML='';">Clear</button>
+      </div>
+      <div id="roster-preview" class="mb"></div>
+      <button class="btn-primary" onclick="uploadRoster()">Upload to Roster</button>
+      <p class="text-xs text-gray mt">Existing students with the same ID will be updated (name will be refreshed). New IDs will be added.</p>
+    </div>
+    <div id="admin-tab-export" class="hidden"><div class="text-center" style="padding:10px 0"><p class="text-gray text-sm mb">Export hours by club as CSV spreadsheets.</p><div id="adm-export-btns" class="flex-col" style="max-width:300px;margin:0 auto"></div></div></div>
+    <div id="admin-tab-settings" class="hidden">
+      <div class="mb" style="margin-bottom:20px"><div class="label mb">Change Admin PIN</div><div class="flex"><input type="password" id="set-admin-pin" placeholder="New admin PIN" style="flex:1;margin-bottom:0"><button class="btn-primary" style="width:auto;padding:12px 20px;margin-top:0" onclick="updatePin('admin')">Save</button></div></div>
+      <div class="mb" style="margin-bottom:20px"><div class="label mb">Change Officer PIN</div><div class="flex"><input type="password" id="set-officer-pin" placeholder="New officer PIN" style="flex:1;margin-bottom:0"><button class="btn-primary" style="width:auto;padding:12px 20px;margin-top:0" onclick="updatePin('officer')">Save</button></div></div>
+      <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:20px;margin-top:10px"><div class="label" style="color:var(--red);margin-bottom:10px">Danger Zone</div><div class="flex"><button class="btn-danger" onclick="resetAllData()">Reset All Data</button><button class="btn-outline red" onclick="clearLogsOnly()">Clear Logs Only</button></div></div>
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="footer">TEMPE HIGH SCHOOL &middot; HOME OF THE BUFFALOES</div>
 
 <script>
-// ═══════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════
-let session = { pin: null, role: null };
-let cache = { roster: [], events: [], logs: [], active: [] };
+// ═══ STATE ═══
+let STATE = { clubs: [], events: [], students: [], logs: [] };
+let currentView = "checkin", adminTab = "clubs", logFilter = "all";
+let ciSelectedClubs = [], offEventClubs = [], admEventClubs = [], bulkSelectedStudents = [];
+let hrsFilterClub = "all", useCustomEvent = false;
+let parsedRoster = [];
 
-// ═══════════════════════════════════════════════
-//  HELPERS
-// ═══════════════════════════════════════════════
-function flash(msg, type) {
-  const el = document.getElementById("flash");
-  el.textContent = msg;
-  el.className = "flash show " + (type === "error" ? "error" : "success");
-  setTimeout(() => el.classList.remove("show"), 2400);
-}
-function showLoading(b) {
-  document.getElementById("loading").classList.toggle("show", b);
-}
+// ═══ API ═══
 async function api(method, path, body) {
-  const opts = {
-    method,
-    headers: { "Content-Type": "application/json", "X-Pin": session.pin || "" }
-  };
+  const opts = { method, headers: { "Content-Type": "application/json" } };
   if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(path, opts);
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error || "Request failed");
-  return data;
-}
-function fmtTime(iso) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleString([], {
-    month: "short", day: "numeric",
-    hour: "numeric", minute: "2-digit"
-  });
-}
-function fmtDate(iso) {
-  if (!iso) return "";
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
-}
-function hoursBetween(inIso, outIso) {
-  if (!inIso || !outIso) return 0;
-  return Math.max(0, (new Date(outIso) - new Date(inIso)) / 3600000);
+  const res = await fetch("/api" + path, opts);
+  return res.json();
 }
 
-// ═══════════════════════════════════════════════
-//  PIN / AUTH
-// ═══════════════════════════════════════════════
-async function checkPin() {
-  const pin = document.getElementById("pin-input").value.trim();
-  if (!pin) return flash("Enter a PIN", "error");
-  showLoading(true);
-  try {
-    const r = await fetch("/verify-pin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pin })
-    });
-    const data = await r.json();
-    if (!data.valid) { flash("Incorrect PIN", "error"); showLoading(false); return; }
-    session.pin = pin;
-    session.role = data.role;
-    document.getElementById("pin-screen").classList.add("hide");
-    document.getElementById("app").classList.remove("hide");
-    if (session.role === "admin") {
-      document.querySelectorAll(".admin-only").forEach(el => el.classList.remove("hide"));
-    }
-    await loadAllData();
-  } catch (e) {
-    flash("Connection error", "error");
-  }
-  showLoading(false);
-}
-function logout() {
-  session = { pin: null, role: null };
-  document.getElementById("pin-input").value = "";
-  document.getElementById("app").classList.add("hide");
-  document.querySelectorAll(".admin-only").forEach(el => el.classList.add("hide"));
-  document.getElementById("pin-screen").classList.remove("hide");
-}
-
-// ═══════════════════════════════════════════════
-//  TABS
-// ═══════════════════════════════════════════════
-function showTab(name) {
-  document.querySelectorAll(".tab").forEach(t => t.classList.add("hide"));
-  document.getElementById("tab-" + name).classList.remove("hide");
-  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-  const btn = document.querySelector(`.nav-btn[data-tab="${name}"]`);
-  if (btn) btn.classList.add("active");
-  if (name === "active") renderActive();
-  if (name === "hours") renderHours();
-  if (name === "roster") renderRoster();
-  if (name === "events") renderEvents();
-}
-
-// ═══════════════════════════════════════════════
-//  DATA LOAD
-// ═══════════════════════════════════════════════
 async function loadAllData() {
   showLoading(true);
-  try {
-    const [roster, events, logs] = await Promise.all([
-      api("GET", "/roster"),
-      api("GET", "/events"),
-      api("GET", "/logs")
-    ]);
-    cache.roster = roster.students || [];
-    cache.events = events.events || [];
-    cache.logs = logs.logs || [];
-    cache.active = cache.logs.filter(l => l.signIn && !l.signOut);
-    renderSignInDropdowns();
-    renderClubFilter();
-    renderClubSuggestions();
-  } catch (e) {
-    flash("Load error: " + e.message, "error");
-  }
+  try { STATE = await api("GET", "/data"); renderCurrentView(); }
+  catch (e) { flash("Error loading data: " + e.message, "error"); }
   showLoading(false);
 }
 
-// ═══════════════════════════════════════════════
-//  SIGN IN / OUT
-// ═══════════════════════════════════════════════
-function renderSignInDropdowns() {
-  const evSel = document.getElementById("signin-event");
-  const stSel = document.getElementById("signin-student");
-  evSel.innerHTML = cache.events.length
-    ? cache.events.map(e => `<option value="${e.id}">${e.name} — ${fmtDate(e.date)}</option>`).join("")
-    : `<option value="">No events yet — ask an admin to add one</option>`;
-  const sorted = [...cache.roster].sort((a, b) =>
-    (a.lastName + a.firstName).localeCompare(b.lastName + b.firstName)
-  );
-  stSel.innerHTML = sorted.length
-    ? sorted.map(s => `<option value="${s.id}">${s.lastName}, ${s.firstName} (${s.id})${s.club ? " — " + s.club : ""}</option>`).join("")
-    : `<option value="">Roster is empty — ask an admin to add students</option>`;
-}
-async function doSignIn() {
-  const eventId = document.getElementById("signin-event").value;
-  const studentId = document.getElementById("signin-student").value;
-  if (!eventId || !studentId) return flash("Pick an event and a student", "error");
-  showLoading(true);
-  try {
-    await api("POST", "/sign-in", { eventId, studentId });
-    await loadAllData();
-    flash("Signed in!");
-  } catch (e) { flash(e.message, "error"); }
-  showLoading(false);
-}
-async function doSignOut() {
-  const eventId = document.getElementById("signin-event").value;
-  const studentId = document.getElementById("signin-student").value;
-  if (!eventId || !studentId) return flash("Pick an event and a student", "error");
-  showLoading(true);
-  try {
-    const r = await api("POST", "/sign-out", { eventId, studentId });
-    await loadAllData();
-    const hrs = r.hours ? r.hours.toFixed(2) : "0";
-    flash(`Signed out — ${hrs} hrs logged`);
-  } catch (e) { flash(e.message, "error"); }
-  showLoading(false);
+function showLoading(show) { document.getElementById("loadingOverlay").style.display = show ? "flex" : "none"; }
+
+// ═══ ALERTS ═══
+let alertTimer;
+function flash(msg, type) {
+  type = type || "success";
+  const el = document.getElementById("alertBox");
+  el.className = "alert " + type; el.textContent = msg; el.classList.remove("hidden");
+  clearTimeout(alertTimer); alertTimer = setTimeout(() => el.classList.add("hidden"), 4000);
 }
 
-// ═══════════════════════════════════════════════
-//  ACTIVE LIST
-// ═══════════════════════════════════════════════
-function renderActive() {
-  const wrap = document.getElementById("active-list");
-  if (!cache.active.length) {
-    wrap.innerHTML = `<div class="empty">No one is signed in right now.</div>`;
-    return;
-  }
-  let html = `<table><thead><tr><th>Student</th><th>Event</th><th>Signed In</th></tr></thead><tbody>`;
-  cache.active.forEach(l => {
-    const s = cache.roster.find(r => r.id === l.studentId);
-    const e = cache.events.find(ev => ev.id === l.eventId);
-    const name = s ? `${s.lastName}, ${s.firstName}` : l.studentId;
-    const evName = e ? e.name : "—";
-    html += `<tr><td>${name} <span class="badge badge-active">In</span></td><td>${evName}</td><td>${fmtTime(l.signIn)}</td></tr>`;
+// ═══ NAV ═══
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  ["checkin","checkout","hours","officer","admin"].forEach(v => {
+    const el = document.getElementById("view-" + v); if (el) el.classList.toggle("hidden", v !== view);
   });
-  html += `</tbody></table>`;
-  wrap.innerHTML = html;
+  renderCurrentView();
+}
+function renderCurrentView() {
+  switch (currentView) {
+    case "checkin": renderCheckIn(); break;
+    case "checkout": renderCheckOut(); break;
+    case "hours": renderHoursView(); break;
+    case "officer": renderOfficer(); break;
+    case "admin": renderAdmin(); break;
+  }
 }
 
-// ═══════════════════════════════════════════════
-//  HOURS SUMMARY
-// ═══════════════════════════════════════════════
-function renderClubFilter() {
-  const sel = document.getElementById("hours-club");
-  const clubs = [...new Set(cache.roster.map(s => s.club).filter(Boolean))].sort();
-  sel.innerHTML = `<option value="">All Clubs / Groups</option>` +
-    clubs.map(c => `<option value="${c}">${c}</option>`).join("");
-}
-function renderClubSuggestions() {
-  const dl = document.getElementById("club-suggestions");
-  if (!dl) return;
-  const clubs = [...new Set(cache.roster.map(s => s.club).filter(Boolean))].sort();
-  dl.innerHTML = clubs.map(c => `<option value="${c}">`).join("");
-}
-function buildHoursSummary(clubFilter) {
-  const summary = {};
-  cache.logs.forEach(l => {
-    if (!l.signIn || !l.signOut) return;
-    const s = cache.roster.find(r => r.id === l.studentId);
-    if (!s) return;
-    if (clubFilter && s.club !== clubFilter) return;
-    const key = s.id;
-    if (!summary[key]) summary[key] = { id: s.id, name: `${s.lastName}, ${s.firstName}`, total: 0, events: 0 };
-    summary[key].total += hoursBetween(l.signIn, l.signOut);
-    summary[key].events += 1;
-  });
-  return Object.values(summary).sort((a, b) => b.total - a.total);
-}
-function renderHours() {
-  const club = document.getElementById("hours-club").value;
-  const rows = buildHoursSummary(club);
-  const tbody = document.getElementById("hours-tbody");
-  if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty">No completed sign-outs yet.</td></tr>`;
-  } else {
-    tbody.innerHTML = rows.map(r =>
-      `<tr><td>${r.name}</td><td>${r.id}</td><td>${r.total.toFixed(2)}</td><td>${r.events}</td></tr>`
-    ).join("");
-  }
-  const totalHours = rows.reduce((a, r) => a + r.total, 0);
-  const totalStudents = rows.length;
-  const avg = totalStudents ? (totalHours / totalStudents) : 0;
-  document.getElementById("hours-stats").innerHTML = `
-    <div class="stat"><div class="stat-num">${totalStudents}</div><div class="stat-label">Students</div></div>
-    <div class="stat"><div class="stat-num">${totalHours.toFixed(1)}</div><div class="stat-label">Total Hours</div></div>
-    <div class="stat"><div class="stat-num">${avg.toFixed(1)}</div><div class="stat-label">Avg / Student</div></div>
-  `;
-}
-
-// ═══════════════════════════════════════════════
-//  ROSTER (admin)
-// ═══════════════════════════════════════════════
-async function addStudent() {
-  const firstName = document.getElementById("new-first").value.trim();
-  const lastName = document.getElementById("new-last").value.trim();
-  const id = document.getElementById("new-id").value.trim();
-  const club = document.getElementById("new-club").value.trim();
-  if (!firstName || !lastName || !id) return flash("First, last, and ID required", "error");
-  showLoading(true);
-  try {
-    await api("POST", "/roster", { firstName, lastName, id, club });
-    document.getElementById("new-first").value = "";
-    document.getElementById("new-last").value = "";
-    document.getElementById("new-id").value = "";
-    document.getElementById("new-club").value = "";
-    await loadAllData();
-    renderRoster();
-    flash("Student added!");
-  } catch (e) { flash(e.message, "error"); }
-  showLoading(false);
-}
-async function bulkImport() {
-  const text = document.getElementById("bulk-roster").value.trim();
-  if (!text) return flash("Paste some rows first", "error");
-  const rows = text.split(/\r?\n/).map(line => line.split(",").map(c => c.trim())).filter(r => r.length >= 3);
-  if (!rows.length) return flash("No valid rows found", "error");
-  showLoading(true);
-  let added = 0, failed = 0;
-  for (const r of rows) {
-    try {
-      await api("POST", "/roster", {
-        firstName: r[0], lastName: r[1], id: r[2], club: r[3] || ""
-      });
-      added++;
-    } catch (e) { failed++; }
-  }
-  document.getElementById("bulk-roster").value = "";
-  await loadAllData();
-  renderRoster();
-  flash(`Added ${added}${failed ? ", " + failed + " skipped" : ""}`);
-  showLoading(false);
-}
-async function deleteStudent(id) {
-  if (!confirm("Remove this student from the roster?")) return;
-  showLoading(true);
-  try {
-    await api("DELETE", "/roster/" + encodeURIComponent(id));
-    await loadAllData();
-    renderRoster();
-    flash("Student removed.");
-  } catch (e) { flash(e.message, "error"); }
-  showLoading(false);
-}
-function renderRoster() {
-  const wrap = document.getElementById("roster-list");
-  if (!wrap) return;
-  const q = (document.getElementById("roster-search").value || "").toLowerCase();
-  const list = cache.roster
-    .filter(s => {
-      if (!q) return true;
-      return (s.firstName + " " + s.lastName + " " + s.id + " " + (s.club || "")).toLowerCase().includes(q);
-    })
-    .sort((a, b) => (a.lastName + a.firstName).localeCompare(b.lastName + b.firstName));
-  if (!list.length) {
-    wrap.innerHTML = `<div class="empty">No students match.</div>`;
-    return;
-  }
-  wrap.innerHTML = list.map(s => `
-    <div class="roster-row">
-      <div class="name">${s.lastName}, ${s.firstName}</div>
-      <div class="id">${s.id}${s.club ? " &middot; " + s.club : ""}</div>
-      <button onclick="deleteStudent('${s.id}')">Remove</button>
-    </div>
-  `).join("");
-}
-
-// ═══════════════════════════════════════════════
-//  EVENTS (admin)
-// ═══════════════════════════════════════════════
-async function addEvent() {
-  const name = document.getElementById("event-name").value.trim();
-  const date = document.getElementById("event-date").value;
-  if (!name || !date) return flash("Event name and date required", "error");
-  showLoading(true);
-  try {
-    await api("POST", "/events", { name, date });
-    document.getElementById("event-name").value = "";
-    document.getElementById("event-date").value = "";
-    await loadAllData();
-    renderEvents();
-    flash("Event added!");
-  } catch (e) { flash(e.message, "error"); }
-  showLoading(false);
-}
-async function deleteEvent(id) {
-  if (!confirm("Delete this event? All its sign-ins will also be removed.")) return;
-  showLoading(true);
-  try {
-    await api("DELETE", "/events/" + encodeURIComponent(id));
-    await loadAllData();
-    renderEvents();
-    flash("Event deleted.");
-  } catch (e) { flash(e.message, "error"); }
-  showLoading(false);
-}
-async function renameEvent(id) {
-  const ev = cache.events.find(e => e.id === id);
-  if (!ev) return;
-  const newName = prompt("Rename event:", ev.name);
-  if (!newName || newName === ev.name) return;
-  showLoading(true);
-  try {
-    await api("PUT", "/events/" + encodeURIComponent(id), { name: newName, date: ev.date });
-    await loadAllData();
-    renderEvents();
-    flash("Event renamed.");
-  } catch (e) { flash(e.message, "error"); }
-  showLoading(false);
-}
-function renderEvents() {
-  const wrap = document.getElementById("events-list");
-  if (!wrap) return;
-  if (!cache.events.length) {
-    wrap.innerHTML = `<div class="empty">No events yet — add one above.</div>`;
-    return;
-  }
-  const sorted = [...cache.events].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  wrap.innerHTML = sorted.map(e => {
-    const count = cache.logs.filter(l => l.eventId === e.id).length;
-    return `
-      <div class="event-row">
-        <div class="event-name">${e.name}</div>
-        <div class="event-meta">${fmtDate(e.date)} &middot; ${count} sign-in${count === 1 ? "" : "s"}</div>
-        <div class="event-actions">
-          <button class="btn-edit" onclick="renameEvent('${e.id}')">Rename</button>
-          <button class="btn-del" onclick="deleteEvent('${e.id}')">Delete</button>
-        </div>
-      </div>
-    `;
+// ═══ CLUB TOGGLES ═══
+function renderClubToggles(id, arr, fn) {
+  document.getElementById(id).innerHTML = STATE.clubs.map(c => {
+    const sel = arr.includes(c.name);
+    return `<button class="club-toggle ${sel?'selected':''}" onclick="${fn}('${esc(c.name)}')">${sel?'✓ ':''}${esc(c.name)}</button>`;
   }).join("");
 }
+function toggleCiClub(n) { ciSelectedClubs = tog(ciSelectedClubs,n); renderClubToggles("ci-clubs",ciSelectedClubs,"toggleCiClub"); updateEventDropdown(); }
+function toggleOffClub(n) { offEventClubs = tog(offEventClubs,n); renderClubToggles("off-event-clubs",offEventClubs,"toggleOffClub"); }
+function toggleAdmClub(n) { admEventClubs = tog(admEventClubs,n); renderClubToggles("adm-event-clubs",admEventClubs,"toggleAdmClub"); }
+function tog(arr,v) { return arr.includes(v) ? arr.filter(x=>x!==v) : [...arr,v]; }
+function esc(s) { return String(s).replace(/'/g,"\\'"); }
 
-// ═══════════════════════════════════════════════
-//  EXPORTS
-// ═══════════════════════════════════════════════
-function exportLog() {
-  const club = document.getElementById("hours-club").value;
-  const label = club || "All_Clubs";
-  const header = ["Last Name", "First Name", "Student ID", "Club", "Event", "Event Date", "Sign In", "Sign Out", "Hours"];
-  const rows = [];
-  cache.logs.forEach(l => {
-    const s = cache.roster.find(r => r.id === l.studentId);
-    const e = cache.events.find(ev => ev.id === l.eventId);
-    if (!s) return;
-    if (club && s.club !== club) return;
-    const hrs = (l.signIn && l.signOut) ? hoursBetween(l.signIn, l.signOut).toFixed(2) : "";
-    rows.push([
-      s.lastName, s.firstName, s.id, s.club || "",
-      e ? e.name : "", e ? e.date : "",
-      l.signIn || "", l.signOut || "", hrs
-    ]);
-  });
-  let csv = label + " - DETAILED LOG\n" + header.join(",") + "\n";
-  rows.forEach(r => csv += r.map(c => `"${c}"`).join(",") + "\n");
-  download(csv, label.replace(/\s+/g, "_") + "_Log_" + new Date().toISOString().slice(0, 10) + ".csv");
-  flash("Log exported!");
+// ═══ CHECK IN ═══
+function renderCheckIn() { renderClubToggles("ci-clubs",ciSelectedClubs,"toggleCiClub"); updateEventDropdown(); }
+function updateEventDropdown() {
+  const active = STATE.events.filter(e => e.active && ciSelectedClubs.some(c => e.clubs.includes(c)));
+  document.getElementById("ci-event").innerHTML = '<option value="">Select an event...</option>' + active.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join("");
 }
-function exportHours() {
-  const club = document.getElementById("hours-club").value;
-  const label = club || "All_Clubs";
-  const rows = buildHoursSummary(club);
-  let csv = label + " - HOURS SUMMARY\nStudent Name,Student ID,Total Hours,Total Events\n";
-  rows.forEach(r => csv += `"${r.name}","${r.id}","${r.total.toFixed(2)}","${r.events}"\n`);
-  download(csv, label.replace(/\s+/g, "_") + "_Hours_" + new Date().toISOString().slice(0, 10) + ".csv");
-  flash("Hours exported!");
+function toggleCustomEvent(c) { useCustomEvent=c; document.getElementById("ci-event-select-wrap").classList.toggle("hidden",c); document.getElementById("ci-event-custom-wrap").classList.toggle("hidden",!c); }
+function showSuggestions() {
+  const name = document.getElementById("ci-name").value, el = document.getElementById("ci-suggestions");
+  if (name.length<2) { el.classList.add("hidden"); return; }
+  const m = STATE.students.filter(s => s.name.toLowerCase().includes(name.toLowerCase())).slice(0,5);
+  if (!m.length||STATE.students.find(s=>s.name===name)) { el.classList.add("hidden"); return; }
+  el.classList.remove("hidden");
+  el.innerHTML = m.map(s => `<button class="suggestion-btn" onclick="pickSuggestion('${esc(s.name)}','${s.id}')">${esc(s.name)}</button>`).join("");
 }
-function download(content, filename) {
-  const blob = new Blob([content], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
+function pickSuggestion(n,id) { document.getElementById("ci-name").value=n; document.getElementById("ci-id").value=id; document.getElementById("ci-suggestions").classList.add("hidden"); }
 
-// ═══════════════════════════════════════════════
-//  ADMIN SETTINGS
-// ═══════════════════════════════════════════════
-async function updatePin(type) {
-  const id = type === "admin" ? "set-admin-pin" : "set-officer-pin";
-  const newPin = document.getElementById(id).value;
-  if (newPin.length < 4) return flash("PIN must be at least 4 characters", "error");
+async function doCheckIn() {
+  const name=document.getElementById("ci-name").value.trim(), sid=document.getElementById("ci-id").value.trim();
+  const evtName = useCustomEvent ? document.getElementById("ci-custom-event").value.trim() : (STATE.events.find(e=>e.id===document.getElementById("ci-event").value)||{}).name;
+  const evtId = useCustomEvent ? "" : document.getElementById("ci-event").value;
+  if (!name||!sid) return flash("Enter your name and student ID.","error");
+  if (!ciSelectedClubs.length) return flash("Select at least one club.","error");
+  if (!evtName) return flash("Select or enter an event.","error");
   showLoading(true);
   try {
-    const r = await api("POST", "/change-pin", { type, newPin });
-    if (r.success) {
-      document.getElementById(id).value = "";
-      flash((type === "admin" ? "Admin" : "Officer") + " PIN updated!");
+    const r = await api("POST","/checkin",{studentName:name,studentId:sid,clubs:ciSelectedClubs,eventName:evtName,eventId:evtId});
+    if (r.newLogs&&r.newLogs.length) {
+      STATE.logs.unshift(...r.newLogs);
+      if (!STATE.students.find(s=>s.id===sid)) STATE.students.push({id:sid,name});
+      flash("Checked in to "+evtName+" for "+r.newLogs.map(l=>l.club).join(", ")+"!");
+      document.getElementById("ci-name").value=""; document.getElementById("ci-id").value="";
+      ciSelectedClubs=[]; renderClubToggles("ci-clubs",ciSelectedClubs,"toggleCiClub");
+    } else if (r.dupes&&r.dupes.length) flash("Already checked in for: "+r.dupes.join(", "),"error");
+  } catch(e) { flash("Error: "+e.message,"error"); }
+  showLoading(false);
+}
+
+// ═══ CHECK OUT ═══
+function renderCheckOut() { showOpenLogs(); }
+function showOpenLogs() {
+  const sid=document.getElementById("co-id").value.trim();
+  const open=STATE.logs.filter(l=>!l.checkOut), myOpen=sid?open.filter(l=>l.studentId===sid):[];
+  const coAll=document.getElementById("co-checkout-all"), coMy=document.getElementById("co-my-open");
+  if (sid&&!myOpen.length) { coAll.classList.add("hidden"); coMy.innerHTML='<p class="text-gray text-sm">No active check-ins for this ID.</p>'; }
+  else if (myOpen.length) {
+    if (myOpen.length>1) { coAll.classList.remove("hidden"); coAll.innerHTML=`<button class="btn-green" onclick="doCheckOut([${myOpen.map(l=>"'"+l.id+"'").join(",")}])">Check Out All (${myOpen.length})</button>`; } else coAll.classList.add("hidden");
+    coMy.innerHTML=myOpen.map(l=>{const el=((Date.now()-new Date(l.checkIn).getTime())/3600000).toFixed(2);return`<div class="dark-box"><div class="row"><div><span class="fw700" style="font-size:14px">${esc(l.eventName)}</span> <span class="badge silver">${esc(l.club)}</span></div><span class="text-gray text-xs">${el} hrs</span></div><button class="btn-green" style="margin-top:10px" onclick="doCheckOut(['${l.id}'])">Check Out</button></div>`;}).join("");
+  } else { coAll.classList.add("hidden"); coMy.innerHTML=""; }
+  const allEl=document.getElementById("co-all-open");
+  if (open.length) allEl.innerHTML=`<div class="label mb">Currently Checked In (${open.length})</div>`+open.slice(0,20).map(l=>`<div class="row divider" style="font-size:13px"><span>${esc(l.studentName)}</span><span class="text-gray">${esc(l.club)} — ${esc(l.eventName)}</span></div>`).join("")+(open.length>20?`<p class="text-gray text-xs">+ ${open.length-20} more</p>`:"");
+  else allEl.innerHTML="";
+}
+async function doCheckOut(ids) {
+  showLoading(true);
+  try {
+    const r=await api("POST","/checkout",{logIds:ids});
+    if(r.success){r.results.forEach(x=>{const l=STATE.logs.find(l=>l.id===x.id);if(l)l.checkOut=x.checkOut;});flash("Checked out of "+ids.length+" "+(ids.length===1?"entry":"entries")+"!");document.getElementById("co-id").value="";showOpenLogs();}
+  } catch(e){flash("Error: "+e.message,"error");}
+  showLoading(false);
+}
+
+// ═══ MY HOURS ═══
+function renderHoursView(){showMyHours();}
+function showMyHours(){
+  const sid=document.getElementById("hrs-id").value.trim();
+  if(!sid){document.getElementById("hrs-club-filters").classList.add("hidden");document.getElementById("hrs-total").classList.add("hidden");document.getElementById("hrs-list").innerHTML="";return;}
+  const completed=STATE.logs.filter(l=>l.checkOut&&l.studentId===sid);
+  const byClub={};completed.forEach(l=>{if(!byClub[l.club])byClub[l.club]=0;byClub[l.club]+=(new Date(l.checkOut)-new Date(l.checkIn))/3600000;});
+  const filtered=hrsFilterClub==="all"?completed:completed.filter(l=>l.club===hrsFilterClub);
+  const total=filtered.reduce((s,l)=>s+(new Date(l.checkOut)-new Date(l.checkIn))/3600000,0);
+  const fEl=document.getElementById("hrs-club-filters");
+  if(Object.keys(byClub).length){fEl.classList.remove("hidden");fEl.innerHTML=`<button class="btn-outline ${hrsFilterClub==='all'?'active':''}" onclick="setHrsFilter('all')">All</button>`+Object.entries(byClub).map(([c,h])=>`<button class="btn-outline ${hrsFilterClub===c?'active':''}" onclick="setHrsFilter('${esc(c)}')">${esc(c)} (${h.toFixed(1)}h)</button>`).join("");}else fEl.classList.add("hidden");
+  const tEl=document.getElementById("hrs-total");tEl.classList.remove("hidden");
+  tEl.innerHTML=`<div class="highlight-box row"><span class="fw700" style="color:var(--silver-light);text-transform:uppercase;font-size:12px;letter-spacing:1px">${hrsFilterClub==="all"?"Total Hours":esc(hrsFilterClub)}</span><span style="font-size:26px;font-weight:800;color:var(--white)">${total.toFixed(1)}</span></div>`;
+  const lEl=document.getElementById("hrs-list");
+  if(!filtered.length){lEl.innerHTML='<p class="text-gray text-sm" style="margin-top:12px">No completed hours found.</p>';return;}
+  lEl.innerHTML=filtered.sort((a,b)=>new Date(b.checkIn)-new Date(a.checkIn)).map(l=>{const h=((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2);return`<div class="divider" style="padding:10px 0"><div class="row"><div><span class="fw600" style="font-size:14px">${esc(l.eventName)}</span> <span class="badge silver">${esc(l.club)}</span></div><span class="fw700" style="color:var(--white)">${h}h</span></div><div class="text-xs text-gray" style="margin-top:3px">${new Date(l.checkIn).toLocaleDateString()} &bull; ${fmtTime(l.checkIn)} – ${fmtTime(l.checkOut)}${l.bulkEntry?' <em>manual entry</em>':''}</div></div>`;}).join("");
+}
+function setHrsFilter(c){hrsFilterClub=c;showMyHours();}
+function fmtTime(iso){return new Date(iso).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
+
+// ═══ OFFICER ═══
+function renderOfficer(){renderClubToggles("off-event-clubs",offEventClubs,"toggleOffClub");renderOfficerEvents();renderOfficerExport();}
+function renderOfficerEvents(){
+  const active=STATE.events.filter(e=>e.active);const el=document.getElementById("off-active-events");
+  if(!active.length){el.innerHTML='<p class="text-gray text-sm">No active events.</p>';return;}
+  el.innerHTML=active.map(e=>`<div class="row divider"><div><span class="fw600" style="font-size:14px">${esc(e.name)}</span><div class="flex" style="gap:4px;margin-top:4px">${e.clubs.map(c=>`<span class="badge silver">${esc(c)}</span>`).join("")}</div></div></div>`).join("");
+}
+function renderOfficerExport(){document.getElementById("off-export-btns").innerHTML=STATE.clubs.map(c=>{const n=STATE.logs.filter(l=>l.club===c.name&&l.checkOut).length;return`<button class="btn-outline" onclick="exportClub('${esc(c.name)}')">${esc(c.name)} (${n})</button>`;}).join("");}
+async function officerLogin(){
+  const pin=document.getElementById("officer-pin").value;showLoading(true);
+  try{const r=await api("POST","/verify-pin",{type:"officer",pin});if(r.success){document.getElementById("officer-login").classList.add("hidden");document.getElementById("officer-dashboard").classList.remove("hidden");renderOfficer();}else flash("Incorrect PIN","error");}catch(e){flash("Error: "+e.message,"error");}showLoading(false);
+}
+function officerLogout(){document.getElementById("officer-login").classList.remove("hidden");document.getElementById("officer-dashboard").classList.add("hidden");document.getElementById("officer-pin").value="";}
+async function officerAddEvent(){
+  const name=document.getElementById("off-event-name").value.trim();if(!name)return flash("Enter an event name.","error");if(!offEventClubs.length)return flash("Select at least one club.","error");
+  showLoading(true);try{const r=await api("POST","/events",{name,clubs:offEventClubs});if(r.success){STATE.events.push(r.event);document.getElementById("off-event-name").value="";offEventClubs=[];renderOfficer();flash('Event "'+name+'" created!');}}catch(e){flash("Error: "+e.message,"error");}showLoading(false);
+}
+
+// ═══ ADMIN ═══
+function renderAdmin(){renderAdminTab();}
+function switchAdminTab(tab){adminTab=tab;document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));["clubs","events","logs","bulk","students","roster","export","settings"].forEach(t=>{const el=document.getElementById("admin-tab-"+t);if(el)el.classList.toggle("hidden",t!==tab);});renderAdminTab();}
+function renderAdminTab(){
+  switch(adminTab){case"clubs":renderAdminClubs();break;case"events":renderAdminEvents();break;case"logs":renderAdminLogs();break;case"bulk":renderAdminBulk();break;case"students":renderAdminStudents();break;case"export":renderAdminExport();break;}
+}
+async function adminLogin(){
+  const pin=document.getElementById("admin-pin").value;showLoading(true);
+  try{const r=await api("POST","/verify-pin",{type:"admin",pin});if(r.success){document.getElementById("admin-login").classList.add("hidden");document.getElementById("admin-dashboard").classList.remove("hidden");renderAdmin();}else flash("Incorrect PIN","error");}catch(e){flash("Error: "+e.message,"error");}showLoading(false);
+}
+function adminLogout(){document.getElementById("admin-login").classList.remove("hidden");document.getElementById("admin-dashboard").classList.add("hidden");document.getElementById("admin-pin").value="";}
+
+// Admin: Clubs
+function renderAdminClubs(){document.getElementById("adm-club-list").innerHTML=STATE.clubs.map(c=>{const n=STATE.logs.filter(l=>l.club===c.name).length;return`<div class="row divider"><div><span class="fw600">${esc(c.name)}</span> <span class="badge gray-b">${n} logs</span></div><button class="btn-outline red" onclick="adminDeleteClub('${c.id}','${esc(c.name)}')">Delete</button></div>`;}).join("");}
+async function adminAddClub(){const name=document.getElementById("adm-new-club").value.trim();if(!name)return;if(STATE.clubs.find(c=>c.name.toLowerCase()===name.toLowerCase()))return flash("Club already exists.","error");showLoading(true);try{const r=await api("POST","/clubs",{name});if(r.success){STATE.clubs.push(r.club);document.getElementById("adm-new-club").value="";renderAdminClubs();flash('"'+name+'" added!');}}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
+async function adminDeleteClub(id,name){if(!confirm('Delete "'+name+'"? Existing logs kept.'))return;showLoading(true);try{await api("DELETE","/clubs/"+id);STATE.clubs=STATE.clubs.filter(c=>c.id!==id);renderAdminClubs();}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
+
+// Admin: Events
+function renderAdminEvents(){renderClubToggles("adm-event-clubs",admEventClubs,"toggleAdmClub");const el=document.getElementById("adm-event-list");if(!STATE.events.length){el.innerHTML='<p class="text-gray text-sm">No events yet.</p>';return;}el.innerHTML=STATE.events.map(e=>`<div class="row divider"><div><span class="fw600">${esc(e.name)}</span> <span class="badge ${e.active?'green':'gray-b'}">${e.active?'Active':'Off'}</span><div class="flex" style="gap:4px;margin-top:4px">${(e.clubs||[]).map(c=>`<span class="badge silver">${esc(c)}</span>`).join("")}</div></div><div class="flex" style="gap:4px"><button class="btn-outline" onclick="adminToggleEvent('${e.id}')">${e.active?'Off':'On'}</button><button class="btn-outline red" onclick="adminDeleteEvent('${e.id}')">✕</button></div></div>`).join("");}
+async function adminAddEvent(){const name=document.getElementById("adm-new-event").value.trim();if(!name||!admEventClubs.length)return flash("Enter event name and select clubs.","error");showLoading(true);try{const r=await api("POST","/events",{name,clubs:admEventClubs});STATE.events.push(r.event);document.getElementById("adm-new-event").value="";admEventClubs=[];renderAdminEvents();flash('Event "'+name+'" created!');}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
+async function adminToggleEvent(id){showLoading(true);try{await api("PUT","/events/"+id+"/toggle");const e=STATE.events.find(ev=>ev.id===id);if(e)e.active=!e.active;renderAdminEvents();}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
+async function adminDeleteEvent(id){if(!confirm("Delete event?"))return;showLoading(true);try{await api("DELETE","/events/"+id);STATE.events=STATE.events.filter(e=>e.id!==id);renderAdminEvents();}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
+
+// Admin: Logs
+function renderAdminLogs(){
+  const bar=document.getElementById("adm-log-filter-bar");
+  bar.innerHTML=`<button class="btn-outline ${logFilter==='all'?'active':''}" onclick="setLogFilter('all')">All</button>`+STATE.clubs.map(c=>`<button class="btn-outline ${logFilter===c.name?'active':''}" onclick="setLogFilter('${esc(c.name)}')">${esc(c.name)}</button>`).join("");
+  const filtered=logFilter==="all"?STATE.logs:STATE.logs.filter(l=>l.club===logFilter);const el=document.getElementById("adm-log-list");
+  if(!filtered.length){el.innerHTML='<p class="text-gray text-sm">No logs.</p>';return;}
+  const rows=[...filtered].slice(0,50);
+  el.innerHTML=`<table><thead><tr><th>Student</th><th>Club</th><th>Event</th><th>Hours</th><th></th></tr></thead><tbody>`+rows.map(l=>{const h=l.checkOut?((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2):"—";return`<tr><td><div class="fw600" style="font-size:13px">${esc(l.studentName)}</div><div class="text-xs text-gray">${l.studentId}</div></td><td><span class="badge silver">${esc(l.club)}</span></td><td><div style="font-size:13px">${esc(l.eventName)}</div><div class="text-xs text-gray">${new Date(l.checkIn).toLocaleDateString()}</div></td><td style="font-size:13px">${h}${l.manualEdit?' <span class="text-xs" style="color:var(--silver-light)">edited</span>':''}${l.bulkEntry?' <span class="text-xs text-gray">bulk</span>':''}${!l.checkOut?' <span class="badge green">Live</span>':''}</td><td><div class="flex" style="gap:4px">${l.checkOut?`<button class="btn-outline" onclick="adminEditLog('${l.id}',${h})">Edit</button>`:''}<button class="btn-outline red" onclick="adminDeleteLog('${l.id}')">✕</button></div></td></tr>`;}).join("")+`</tbody></table>`+(filtered.length>50?`<p class="text-gray text-xs mt">Showing 50 of ${filtered.length}</p>`:"");
+}
+function setLogFilter(c){logFilter=c;renderAdminLogs();}
+async function adminEditLog(id,cur){const n=prompt("Enter new hours:",cur);if(n===null)return;const h=parseFloat(n);if(isNaN(h)||h<0)return flash("Invalid hours.","error");showLoading(true);try{const r=await api("PUT","/logs/"+id,{hours:h});if(r.success){const l=STATE.logs.find(l=>l.id===id);if(l){l.checkOut=r.checkOut;l.manualEdit=true;}renderAdminLogs();flash("Updated!");}}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
+async function adminDeleteLog(id){if(!confirm("Delete this log entry?"))return;showLoading(true);try{await api("DELETE","/logs/"+id);STATE.logs=STATE.logs.filter(l=>l.id!==id);renderAdminLogs();}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
+async function forceCheckOutAll(){const open=(logFilter==="all"?STATE.logs:STATE.logs.filter(l=>l.club===logFilter)).filter(l=>!l.checkOut);if(!open.length)return flash("No open check-ins.","error");if(!confirm("Force check out "+open.length+" students?"))return;showLoading(true);try{const r=await api("POST","/force-checkout",{clubFilter:logFilter});if(r.success){await loadAllData();flash(r.count+" checked out.");}}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
+
+// Admin: Bulk
+function renderAdminBulk(){
+  document.getElementById("bulk-club").innerHTML='<option value="">Select club...</option>'+STATE.clubs.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("");
+  document.getElementById("bulk-date").value=new Date().toISOString().slice(0,10);renderBulkSelected();
+  document.getElementById("bulk-select-all-wrap").innerHTML=STATE.students.length?`<button class="btn-outline" onclick="bulkSelectAll()">Select All Students (${STATE.students.length})</button>`:'<p class="text-gray text-xs">No students yet. Upload a roster or wait for first check-ins.</p>';
+}
+function showBulkSearch(){const q=document.getElementById("bulk-search").value.toLowerCase(),el=document.getElementById("bulk-search-results");if(q.length<1){el.innerHTML="";return;}const m=STATE.students.filter(s=>(s.name.toLowerCase().includes(q)||s.id.includes(q))&&!bulkSelectedStudents.find(b=>b.id===s.id)).slice(0,8);el.innerHTML=m.map(s=>`<button class="suggestion-btn" onclick="bulkAddStudent('${s.id}','${esc(s.name)}')">${esc(s.name)}</button>`).join("");}
+function bulkAddStudent(id,name){if(!bulkSelectedStudents.find(s=>s.id===id))bulkSelectedStudents.push({id,name});document.getElementById("bulk-search").value="";document.getElementById("bulk-search-results").innerHTML="";renderBulkSelected();}
+function bulkRemoveStudent(id){bulkSelectedStudents=bulkSelectedStudents.filter(s=>s.id!==id);renderBulkSelected();}
+function bulkSelectAll(){bulkSelectedStudents=[...STATE.students];renderBulkSelected();}
+function bulkClearAll(){bulkSelectedStudents=[];renderBulkSelected();}
+function renderBulkSelected(){const el=document.getElementById("bulk-selected");if(!bulkSelectedStudents.length){el.innerHTML="";return;}el.innerHTML=`<div class="label" style="margin-bottom:6px">Selected (${bulkSelectedStudents.length})</div><div class="flex" style="gap:4px">${bulkSelectedStudents.map(s=>`<span class="student-chip" onclick="bulkRemoveStudent('${s.id}')">${esc(s.name)} ✕</span>`).join("")}</div><button class="btn-outline gray" style="margin-top:6px" onclick="bulkClearAll()">Clear All</button>`;}
+async function submitBulkHours(){
+  const club=document.getElementById("bulk-club").value,eventName=document.getElementById("bulk-event").value.trim(),hours=parseFloat(document.getElementById("bulk-hours").value),date=document.getElementById("bulk-date").value;
+  if(!club||!eventName||isNaN(hours)||hours<=0||!bulkSelectedStudents.length)return flash("Fill in all fields and select students.","error");
+  showLoading(true);try{const r=await api("POST","/bulk",{club,eventName,hours,date,students:bulkSelectedStudents});if(r.success){await loadAllData();bulkSelectedStudents=[];document.getElementById("bulk-event").value="";document.getElementById("bulk-hours").value="";renderAdminBulk();flash(r.count+" entries added — "+hours+"h each for "+eventName);}}catch(e){flash("Error: "+e.message,"error");}showLoading(false);
+}
+
+// Admin: Students
+function renderAdminStudents(){const el=document.getElementById("adm-student-list");if(!STATE.students.length){el.innerHTML='<p class="text-gray text-sm">No students yet. Upload a roster from the Roster Upload tab.</p>';return;}const sorted=[...STATE.students].sort((a,b)=>a.name.localeCompare(b.name));el.innerHTML=`<p class="text-gray text-xs mb">${STATE.students.length} students</p>`+sorted.map(s=>{const byClub={};STATE.logs.filter(l=>l.studentId===s.id&&l.checkOut).forEach(l=>{if(!byClub[l.club])byClub[l.club]=0;byClub[l.club]+=(new Date(l.checkOut)-new Date(l.checkIn))/3600000;});const total=Object.values(byClub).reduce((a,b)=>a+b,0);return`<div class="divider" style="padding:10px 0"><div class="row"><div><span class="fw600">${esc(s.name)}</span> <span class="text-gray text-xs" style="margin-left:8px">ID: ${s.id}</span></div><span class="badge silver">${total.toFixed(1)}h</span></div>${Object.keys(byClub).length?`<div class="flex" style="gap:6px;margin-top:4px">${Object.entries(byClub).map(([c,h])=>`<span class="text-xs text-gray">${esc(c)}: ${h.toFixed(1)}h</span>`).join("")}</div>`:''}</div>`;}).join("");}
+
+// Admin: Roster Upload
+function parseRosterPaste(text) {
+  // Try tab-separated first (Excel/Sheets default), then comma, then multi-space
+  const out = [];
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    let parts;
+    if (line.includes("\t")) parts = line.split("\t");
+    else if (line.includes(",")) parts = line.split(",");
+    else parts = line.split(/\s{2,}/);
+    parts = parts.map(p => p.trim()).filter(Boolean);
+    if (parts.length < 2) continue;
+    // Figure out which part is the ID (mostly digits, 4+ chars) and which is the name
+    let idPart = null, nameParts = [];
+    for (const p of parts) {
+      if (idPart === null && /^\d{4,}$/.test(p.replace(/\D/g, "")) && p.replace(/\D/g, "").length >= 4) {
+        idPart = p.replace(/\D/g, "");
+      } else {
+        nameParts.push(p);
+      }
     }
-  } catch (e) { flash(e.message, "error"); }
-  showLoading(false);
+    if (!idPart || !nameParts.length) continue;
+    // Name might be "Last, First" already (one cell with a comma) or "First Last" or split across two cells
+    let name = nameParts.join(" ").replace(/\s+/g, " ").trim();
+    out.push({ id: idPart, name });
+  }
+  return out;
 }
-async function resetAllData() {
-  if (!confirm("Clear ALL data? Export first! This cannot be undone.")) return;
+function previewRoster() {
+  const text = document.getElementById("roster-paste").value;
+  if (!text.trim()) return flash("Paste some rows first.", "error");
+  parsedRoster = parseRosterPaste(text);
+  const el = document.getElementById("roster-preview");
+  if (!parsedRoster.length) {
+    el.innerHTML = '<p class="text-sm" style="color:#e74c3c">No valid rows found. Make sure each row has a name and an ID number.</p>';
+    return;
+  }
+  const existingIds = new Set(STATE.students.map(s => s.id));
+  const newCount = parsedRoster.filter(r => !existingIds.has(r.id)).length;
+  const updateCount = parsedRoster.length - newCount;
+  el.innerHTML = `
+    <div class="dark-box">
+      <div class="text-sm fw700 mb">Found ${parsedRoster.length} rows
+        <span class="badge green" style="margin-left:6px">${newCount} new</span>
+        ${updateCount ? `<span class="badge silver" style="margin-left:4px">${updateCount} update</span>` : ''}
+      </div>
+      <div style="max-height:200px;overflow-y:auto;font-size:12px;">
+        ${parsedRoster.slice(0, 50).map(r => `<div style="padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span class="fw600">${esc(r.name)}</span> <span class="text-gray">— ${r.id}</span></div>`).join("")}
+        ${parsedRoster.length > 50 ? `<p class="text-gray text-xs mt">+ ${parsedRoster.length - 50} more</p>` : ''}
+      </div>
+    </div>
+  `;
+}
+async function uploadRoster() {
+  if (!parsedRoster.length) {
+    // Auto-preview if they skipped that step
+    previewRoster();
+    if (!parsedRoster.length) return;
+  }
+  if (!confirm(`Upload ${parsedRoster.length} students to the roster?`)) return;
   showLoading(true);
   try {
-    await api("POST", "/reset-all");
-    await loadAllData();
-    flash("All data cleared.", "error");
-  } catch (e) { flash(e.message, "error"); }
-  showLoading(false);
-}
-async function clearLogsOnly() {
-  if (!confirm("Clear all sign-in logs? Roster and events will be kept.")) return;
-  showLoading(true);
-  try {
-    await api("POST", "/clear-logs");
-    await loadAllData();
-    flash("Logs cleared.", "error");
-  } catch (e) { flash(e.message, "error"); }
+    const r = await api("POST", "/roster", { students: parsedRoster });
+    if (r.success) {
+      flash(`Roster uploaded — ${r.count} students saved.`);
+      document.getElementById("roster-paste").value = "";
+      document.getElementById("roster-preview").innerHTML = "";
+      parsedRoster = [];
+      await loadAllData();
+    } else {
+      flash("Upload failed: " + (r.error || "unknown error"), "error");
+    }
+  } catch (e) { flash("Error: " + e.message, "error"); }
   showLoading(false);
 }
 
-// ═══════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════
-document.getElementById("pin-input").addEventListener("keydown", e => {
-  if (e.key === "Enter") checkPin();
-});
+// Admin: Export
+function renderAdminExport(){document.getElementById("adm-export-btns").innerHTML=STATE.clubs.map(c=>{const n=STATE.logs.filter(l=>l.club===c.name&&l.checkOut).length;return`<button class="btn-primary" onclick="exportClub('${esc(c.name)}')">${esc(c.name)} (${n} entries)</button>`;}).join("")+`<button class="btn-primary" style="background:linear-gradient(135deg,var(--gray),var(--gray-light))" onclick="exportClub('__all__')">Export All Clubs</button>`;}
+
+// CSV Export
+function exportClub(clubName){
+  const completed=clubName==="__all__"?STATE.logs.filter(l=>l.checkOut):STATE.logs.filter(l=>l.club===clubName&&l.checkOut);
+  if(!completed.length)return flash("No completed logs"+(clubName!=="__all__"?" for "+clubName:"")+".","error");
+  const header=["Student Name","Student ID","Club","Event","Date","Check In","Check Out","Hours"];
+  const rows=completed.sort((a,b)=>a.studentName.localeCompare(b.studentName)).map(l=>{const h=((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2);return[l.studentName,l.studentId,l.club,l.eventName,new Date(l.checkIn).toLocaleDateString(),fmtTime(l.checkIn),fmtTime(l.checkOut),h];});
+  const summary={};rows.forEach(r=>{const k=r[0]+"|"+r[1];if(!summary[k])summary[k]={name:r[0],id:r[1],total:0,events:0};summary[k].total+=parseFloat(r[7]);summary[k].events+=1;});
+  const label=clubName==="__all__"?"All_Clubs":clubName;
+  let csv=label+" - DETAILED LOG\n"+header.join(",")+"\n";rows.forEach(r=>csv+=r.map(c=>'"'+c+'"').join(",")+"\n");
+  csv+="\n\n"+label+" - SUMMARY BY STUDENT\nStudent Name,Student ID,Total Hours,Total Events\n";
+  Object.values(summary).sort((a,b)=>a.name.localeCompare(b.name)).forEach(d=>{csv+='"'+d.name+'","'+d.id+'","'+d.total.toFixed(2)+'","'+d.events+'"\n';});
+  const blob=new Blob([csv],{type:"text/csv"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=label.replace(/\s+/g,"_")+"_Hours_"+new Date().toISOString().slice(0,10)+".csv";a.click();URL.revokeObjectURL(url);flash(label+" exported!");
+}
+
+// Admin: Settings
+async function updatePin(type){const id=type==="admin"?"set-admin-pin":"set-officer-pin",newPin=document.getElementById(id).value;if(newPin.length<4)return flash("PIN must be at least 4 characters.","error");showLoading(true);try{const r=await api("POST","/change-pin",{type,newPin});if(r.success){document.getElementById(id).value="";flash((type==="admin"?"Admin":"Officer")+" PIN updated!");}}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
+async function resetAllData(){if(!confirm("Clear ALL data? Export first! Cannot be undone."))return;showLoading(true);try{await api("POST","/reset-all");await loadAllData();flash("All data cleared.","error");}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
+async function clearLogsOnly(){if(!confirm("Clear all logs? Roster and events kept."))return;showLoading(true);try{await api("POST","/clear-logs");await loadAllData();flash("Logs cleared.","error");}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
+
+// ═══ INIT ═══
+window.addEventListener("DOMContentLoaded",loadAllData);
 </script>
 </body>
 </html>
