@@ -176,7 +176,7 @@
   <div id="ci-clubs" class="flex mb"></div>
   <label class="label">Event</label>
   <div id="ci-event-select-wrap">
-    <select id="ci-event"><option value="">Select an event...</option></select>
+    <select id="ci-event"><option value="">Pick a club above first to see events</option></select>
     <button class="btn-outline mb" onclick="toggleCustomEvent(true)">+ Custom event</button>
   </div>
   <div id="ci-event-custom-wrap" class="hidden">
@@ -414,8 +414,8 @@ function esc(s) { return String(s).replace(/'/g,"\\'"); }
 function renderCheckIn() { renderClubToggles("ci-clubs",ciSelectedClubs,"toggleCiClub"); updateEventDropdown(); }
 function updateEventDropdown() {
   const active = STATE.events.filter(e => e.active && ciSelectedClubs.some(c => e.clubs.includes(c)));
-  document.getElementById("ci-event").innerHTML = '<option value="">Select an event...</option>' + active.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join("");
-}
+  const placeholder = ciSelectedClubs.length ? 'Select an event...' : 'Pick a club above first to see events';
+  document.getElementById("ci-event").innerHTML = `<option value="">${placeholder}</option>` + active.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join("");
 function toggleCustomEvent(c) { useCustomEvent=c; document.getElementById("ci-event-select-wrap").classList.toggle("hidden",c); document.getElementById("ci-event-custom-wrap").classList.toggle("hidden",!c); }
 function showSuggestions() {
   const name = document.getElementById("ci-name").value, el = document.getElementById("ci-suggestions");
