@@ -416,6 +416,7 @@ function updateEventDropdown() {
   const active = STATE.events.filter(e => e.active && ciSelectedClubs.some(c => e.clubs.includes(c)));
   const placeholder = ciSelectedClubs.length ? 'Select an event...' : 'Pick a club above first to see events';
   document.getElementById("ci-event").innerHTML = `<option value="">${placeholder}</option>` + active.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join("");
+}
 function toggleCustomEvent(c) { useCustomEvent=c; document.getElementById("ci-event-select-wrap").classList.toggle("hidden",c); document.getElementById("ci-event-custom-wrap").classList.toggle("hidden",!c); }
 function showSuggestions() {
   const name = document.getElementById("ci-name").value, el = document.getElementById("ci-suggestions");
