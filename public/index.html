@@ -99,13 +99,51 @@
   .suggestion-btn { padding: 5px 12px; border-radius: 8px; border: 1.5px solid var(--silver); background: transparent; color: var(--silver-light); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
   .student-chip { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 12px; background: rgba(39,174,96,0.2); color: var(--green-light); font-size: 11px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
   .footer { text-align: center; padding: 28px; color: rgba(138,155,176,0.5); font-size: 10px; letter-spacing: 1.5px; }
+
+  /* Photo modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,10,25,0.9);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000; padding: 12px;
+  }
+  .modal {
+    background: linear-gradient(145deg, #002a55, var(--blue));
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px; padding: 22px; max-width: 520px; width: 100%;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+  .modal .modal-sub { font-size: 12px; color: var(--silver); margin-bottom: 16px; }
+  .photo-slot {
+    background: rgba(0,0,0,0.25); border: 1.5px dashed rgba(255,255,255,0.2);
+    border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 12px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .photo-slot:hover { border-color: var(--silver-light); }
+  .photo-slot.filled { border-style: solid; border-color: var(--green); background: rgba(39,174,96,0.08); }
+  .photo-slot input[type="file"] { display: none; }
+  .photo-slot .slot-label { font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; color: var(--silver-light); }
+  .photo-slot .slot-hint { font-size: 11px; color: var(--gray); margin-top: 6px; }
+  .photo-slot img { max-width: 100%; max-height: 180px; border-radius: 8px; margin-top: 10px; }
+  .photo-slot .swap { font-size: 11px; color: var(--silver-light); text-decoration: underline; margin-top: 8px; display: inline-block; }
+  .photo-icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; padding: 0; border-radius: 6px;
+    border: 1.5px solid var(--silver); background: transparent;
+    color: var(--silver-light); font-size: 14px; cursor: pointer;
+    font-family: inherit; margin-right: 3px;
+  }
+  .photo-icon-btn.available { border-color: var(--green); color: var(--green-light); }
+  .photo-icon-btn.available:hover { background: rgba(39,174,96,0.15); }
+  .photo-icon-btn.missing { opacity: 0.35; cursor: not-allowed; }
+  .photo-viewer img { max-width: 100%; border-radius: 12px; }
 </style>
 </head>
 <body>
 
 <div id="loadingOverlay" class="loading-overlay">
   <div class="spinner"></div>
-  <div class="loading-text">LOADING...</div>
+  <div class="loading-text" id="loadingText">LOADING...</div>
 </div>
 
 <div id="alertBox" class="alert hidden" style="margin-top:8px;"></div>
@@ -183,6 +221,7 @@
     </div>
     <div class="label mb" style="margin-top:12px">Active Events</div>
     <div id="off-active-events"></div>
+    <div class="mt"><div class="label mb">Recent Check-outs (with photos)</div><div id="off-photo-review"></div></div>
     <div class="mt"><div class="label mb">Export Hours</div><div id="off-export-btns" class="flex"></div></div>
   </div>
 </div>
@@ -261,6 +300,41 @@ Gonzales, Reva&#9;26100230</code>
 </div>
 <div class="footer">TEMPE HIGH SCHOOL &middot; HOME OF THE BUFFALOES</div>
 
+<!-- ═══ PHOTO UPLOAD MODAL (student after checkout) ═══ -->
+<div id="photo-modal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h3>Add Photos (Optional)</h3>
+    <div class="modal-sub">Snap a selfie and a photo of the event to verify your hours. You can skip if you don't have them, but photos help your advisor confirm your service.</div>
+
+    <label class="photo-slot" id="slot-selfie">
+      <div class="slot-label" id="slot-selfie-label">📷 Take a Selfie</div>
+      <div class="slot-hint">Tap to open camera</div>
+      <input type="file" accept="image/*" capture="user" onchange="handlePhoto(event, 'selfie')">
+      <div id="preview-selfie"></div>
+    </label>
+
+    <label class="photo-slot" id="slot-event">
+      <div class="slot-label" id="slot-event-label">🌟 Photo of the Event</div>
+      <div class="slot-hint">Tap to open camera</div>
+      <input type="file" accept="image/*" capture="environment" onchange="handlePhoto(event, 'event')">
+      <div id="preview-event"></div>
+    </label>
+
+    <div class="flex mt">
+      <button class="btn-primary" onclick="submitPhotos()">Upload Photos</button>
+      <button class="btn-outline gray" onclick="skipPhotos()" style="width:100%">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PHOTO VIEWER MODAL (officer/admin) ═══ -->
+<div id="viewer-modal" class="modal-backdrop hidden">
+  <div class="modal">
+    <div class="row mb"><h3 id="viewer-title" style="margin:0">Photo</h3><button class="btn-outline" onclick="closeViewer()">Close</button></div>
+    <div class="photo-viewer" id="viewer-content"></div>
+  </div>
+</div>
+
 <script>
 // ═══ STATE ═══
 let STATE = { clubs: [], events: [], students: [], logs: [] };
@@ -268,6 +342,11 @@ let currentView = "checkin", adminTab = "clubs", logFilter = "all";
 let ciSelectedClubs = [], offEventClubs = [], admEventClubs = [], bulkSelectedStudents = [];
 let hrsFilterClub = "all", useCustomEvent = false;
 let parsedRoster = [];
+// photo modal state
+let pendingPhotoLogIds = [];  // set after checkout
+let stagedPhotos = { selfie: null, event: null };  // base64 data URLs
+// remember PIN of whichever staff is logged in — used to fetch signed photo URLs
+let staffPin = null;
 
 // ═══ API ═══
 async function api(method, path, body) {
@@ -284,7 +363,10 @@ async function loadAllData() {
   showLoading(false);
 }
 
-function showLoading(show) { document.getElementById("loadingOverlay").style.display = show ? "flex" : "none"; }
+function showLoading(show, text) {
+  document.getElementById("loadingText").textContent = text || "LOADING...";
+  document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
+}
 
 // ═══ ALERTS ═══
 let alertTimer;
@@ -384,9 +466,130 @@ async function doCheckOut(ids) {
   showLoading(true);
   try {
     const r=await api("POST","/checkout",{logIds:ids});
-    if(r.success){r.results.forEach(x=>{const l=STATE.logs.find(l=>l.id===x.id);if(l)l.checkOut=x.checkOut;});flash("Checked out of "+ids.length+" "+(ids.length===1?"entry":"entries")+"!");document.getElementById("co-id").value="";showOpenLogs();}
+    if(r.success){
+      r.results.forEach(x=>{const l=STATE.logs.find(l=>l.id===x.id);if(l)l.checkOut=x.checkOut;});
+      flash("Checked out of "+ids.length+" "+(ids.length===1?"entry":"entries")+"!");
+      document.getElementById("co-id").value="";
+      showOpenLogs();
+      // Open photo modal AFTER successful checkout
+      pendingPhotoLogIds = ids;
+      stagedPhotos = { selfie: null, event: null };
+      resetPhotoSlots();
+      document.getElementById("photo-modal").classList.remove("hidden");
+    }
   } catch(e){flash("Error: "+e.message,"error");}
   showLoading(false);
+}
+
+// ═══ PHOTO CAPTURE (student side) ═══
+function resetPhotoSlots() {
+  ["selfie","event"].forEach(k => {
+    const slot = document.getElementById("slot-" + k);
+    slot.classList.remove("filled");
+    document.getElementById("preview-" + k).innerHTML = "";
+    document.getElementById("slot-" + k + "-label").textContent =
+      k === "selfie" ? "📷 Take a Selfie" : "🌟 Photo of the Event";
+  });
+}
+async function handlePhoto(evt, kind) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  try {
+    const compressed = await compressImage(file, 900, 0.75);
+    stagedPhotos[kind] = compressed;
+    const slot = document.getElementById("slot-" + kind);
+    slot.classList.add("filled");
+    document.getElementById("slot-" + kind + "-label").textContent =
+      (kind === "selfie" ? "Selfie" : "Event Photo") + " ✓";
+    document.getElementById("preview-" + kind).innerHTML =
+      `<img src="${compressed}" alt="preview"><div class="swap">Tap to retake</div>`;
+  } catch (e) {
+    flash("Couldn't process image: " + e.message, "error");
+  }
+}
+function compressImage(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height && width > maxDim) { height = height * (maxDim / width); width = maxDim; }
+        else if (height > maxDim) { width = width * (maxDim / height); height = maxDim; }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => reject(new Error("bad image"));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error("read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+async function submitPhotos() {
+  if (!pendingPhotoLogIds.length) { skipPhotos(); return; }
+  if (!stagedPhotos.selfie && !stagedPhotos.event) {
+    return flash("Add at least one photo, or tap Skip.", "error");
+  }
+  showLoading(true, "UPLOADING PHOTOS...");
+  try {
+    // Attach the same photos to every log they just checked out (multi-club check-outs)
+    for (const logId of pendingPhotoLogIds) {
+      await api("POST", "/photos", {
+        logId,
+        selfieBase64: stagedPhotos.selfie,
+        eventPhotoBase64: stagedPhotos.event,
+      });
+    }
+    flash("Photos uploaded, thanks!");
+    closePhotoModal();
+    await loadAllData();
+  } catch (e) { flash("Upload error: " + e.message, "error"); }
+  showLoading(false);
+}
+function skipPhotos() {
+  closePhotoModal();
+  flash("Skipped photos, hours were still saved.");
+}
+function closePhotoModal() {
+  document.getElementById("photo-modal").classList.add("hidden");
+  pendingPhotoLogIds = [];
+  stagedPhotos = { selfie: null, event: null };
+  resetPhotoSlots();
+}
+
+// ═══ PHOTO VIEWER (officer/admin side) ═══
+async function viewPhoto(logId, kind) {
+  if (!staffPin) return flash("Officer/Admin only.", "error");
+  showLoading(true, "LOADING PHOTO...");
+  try {
+    const r = await fetch(`/api/photo-url/${logId}/${kind}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin: staffPin }),
+    });
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error || "Couldn't load photo");
+    document.getElementById("viewer-title").textContent = kind === "selfie" ? "Selfie" : "Event Photo";
+    document.getElementById("viewer-content").innerHTML = `<img src="${data.url}" alt="photo">`;
+    document.getElementById("viewer-modal").classList.remove("hidden");
+  } catch (e) { flash(e.message, "error"); }
+  showLoading(false);
+}
+function closeViewer() {
+  document.getElementById("viewer-modal").classList.add("hidden");
+  document.getElementById("viewer-content").innerHTML = "";
+}
+function photoIcons(log) {
+  const selfie = log.hasSelfie
+    ? `<button class="photo-icon-btn available" title="View selfie" onclick="viewPhoto('${log.id}','selfie')">👤</button>`
+    : `<button class="photo-icon-btn missing" title="No selfie">👤</button>`;
+  const event = log.hasEventPhoto
+    ? `<button class="photo-icon-btn available" title="View event photo" onclick="viewPhoto('${log.id}','event')">🌟</button>`
+    : `<button class="photo-icon-btn missing" title="No event photo">🌟</button>`;
+  return selfie + event;
 }
 
 // ═══ MY HOURS ═══
@@ -404,24 +607,40 @@ function showMyHours(){
   tEl.innerHTML=`<div class="highlight-box row"><span class="fw700" style="color:var(--silver-light);text-transform:uppercase;font-size:12px;letter-spacing:1px">${hrsFilterClub==="all"?"Total Hours":esc(hrsFilterClub)}</span><span style="font-size:26px;font-weight:800;color:var(--white)">${total.toFixed(1)}</span></div>`;
   const lEl=document.getElementById("hrs-list");
   if(!filtered.length){lEl.innerHTML='<p class="text-gray text-sm" style="margin-top:12px">No completed hours found.</p>';return;}
-  lEl.innerHTML=filtered.sort((a,b)=>new Date(b.checkIn)-new Date(a.checkIn)).map(l=>{const h=((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2);return`<div class="divider" style="padding:10px 0"><div class="row"><div><span class="fw600" style="font-size:14px">${esc(l.eventName)}</span> <span class="badge silver">${esc(l.club)}</span></div><span class="fw700" style="color:var(--white)">${h}h</span></div><div class="text-xs text-gray" style="margin-top:3px">${new Date(l.checkIn).toLocaleDateString()} &bull; ${fmtTime(l.checkIn)} – ${fmtTime(l.checkOut)}${l.bulkEntry?' <em>manual entry</em>':''}</div></div>`;}).join("");
+  lEl.innerHTML=filtered.sort((a,b)=>new Date(b.checkIn)-new Date(a.checkIn)).map(l=>{const h=((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2);return`<div class="divider" style="padding:10px 0"><div class="row"><div><span class="fw600" style="font-size:14px">${esc(l.eventName)}</span> <span class="badge silver">${esc(l.club)}</span></div><span class="fw700" style="color:var(--white)">${h}h</span></div><div class="text-xs text-gray" style="margin-top:3px">${new Date(l.checkIn).toLocaleDateString()} &bull; ${fmtTime(l.checkIn)} – ${fmtTime(l.checkOut)}${l.bulkEntry?' <em>manual entry</em>':''}${(l.hasSelfie||l.hasEventPhoto)?' &bull; <span style="color:var(--green-light)">📷 photos submitted</span>':''}</div></div>`;}).join("");
 }
 function setHrsFilter(c){hrsFilterClub=c;showMyHours();}
 function fmtTime(iso){return new Date(iso).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
 
 // ═══ OFFICER ═══
-function renderOfficer(){renderClubToggles("off-event-clubs",offEventClubs,"toggleOffClub");renderOfficerEvents();renderOfficerExport();}
+function renderOfficer(){renderClubToggles("off-event-clubs",offEventClubs,"toggleOffClub");renderOfficerEvents();renderOfficerPhotoReview();renderOfficerExport();}
 function renderOfficerEvents(){
   const active=STATE.events.filter(e=>e.active);const el=document.getElementById("off-active-events");
   if(!active.length){el.innerHTML='<p class="text-gray text-sm">No active events.</p>';return;}
   el.innerHTML=active.map(e=>`<div class="row divider"><div><span class="fw600" style="font-size:14px">${esc(e.name)}</span><div class="flex" style="gap:4px;margin-top:4px">${e.clubs.map(c=>`<span class="badge silver">${esc(c)}</span>`).join("")}</div></div></div>`).join("");
 }
+function renderOfficerPhotoReview() {
+  const el = document.getElementById("off-photo-review");
+  const withPhotos = STATE.logs
+    .filter(l => l.checkOut && (l.hasSelfie || l.hasEventPhoto))
+    .slice(0, 15);
+  if (!withPhotos.length) { el.innerHTML = '<p class="text-gray text-sm">No photos submitted yet.</p>'; return; }
+  el.innerHTML = withPhotos.map(l => `
+    <div class="row divider">
+      <div>
+        <span class="fw600" style="font-size:13px">${esc(l.studentName)}</span>
+        <div class="text-xs text-gray">${esc(l.eventName)} &bull; ${new Date(l.checkIn).toLocaleDateString()}</div>
+      </div>
+      <div style="white-space:nowrap">${photoIcons(l)}</div>
+    </div>
+  `).join("");
+}
 function renderOfficerExport(){document.getElementById("off-export-btns").innerHTML=STATE.clubs.map(c=>{const n=STATE.logs.filter(l=>l.club===c.name&&l.checkOut).length;return`<button class="btn-outline" onclick="exportClub('${esc(c.name)}')">${esc(c.name)} (${n})</button>`;}).join("");}
 async function officerLogin(){
   const pin=document.getElementById("officer-pin").value;showLoading(true);
-  try{const r=await api("POST","/verify-pin",{type:"officer",pin});if(r.success){document.getElementById("officer-login").classList.add("hidden");document.getElementById("officer-dashboard").classList.remove("hidden");renderOfficer();}else flash("Incorrect PIN","error");}catch(e){flash("Error: "+e.message,"error");}showLoading(false);
+  try{const r=await api("POST","/verify-pin",{type:"officer",pin});if(r.success){staffPin = pin;document.getElementById("officer-login").classList.add("hidden");document.getElementById("officer-dashboard").classList.remove("hidden");renderOfficer();}else flash("Incorrect PIN","error");}catch(e){flash("Error: "+e.message,"error");}showLoading(false);
 }
-function officerLogout(){document.getElementById("officer-login").classList.remove("hidden");document.getElementById("officer-dashboard").classList.add("hidden");document.getElementById("officer-pin").value="";}
+function officerLogout(){staffPin = null;document.getElementById("officer-login").classList.remove("hidden");document.getElementById("officer-dashboard").classList.add("hidden");document.getElementById("officer-pin").value="";}
 async function officerAddEvent(){
   const name=document.getElementById("off-event-name").value.trim();if(!name)return flash("Enter an event name.","error");if(!offEventClubs.length)return flash("Select at least one club.","error");
   showLoading(true);try{const r=await api("POST","/events",{name,clubs:offEventClubs});if(r.success){STATE.events.push(r.event);document.getElementById("off-event-name").value="";offEventClubs=[];renderOfficer();flash('Event "'+name+'" created!');}}catch(e){flash("Error: "+e.message,"error");}showLoading(false);
@@ -435,9 +654,9 @@ function renderAdminTab(){
 }
 async function adminLogin(){
   const pin=document.getElementById("admin-pin").value;showLoading(true);
-  try{const r=await api("POST","/verify-pin",{type:"admin",pin});if(r.success){document.getElementById("admin-login").classList.add("hidden");document.getElementById("admin-dashboard").classList.remove("hidden");renderAdmin();}else flash("Incorrect PIN","error");}catch(e){flash("Error: "+e.message,"error");}showLoading(false);
+  try{const r=await api("POST","/verify-pin",{type:"admin",pin});if(r.success){staffPin = pin;document.getElementById("admin-login").classList.add("hidden");document.getElementById("admin-dashboard").classList.remove("hidden");renderAdmin();}else flash("Incorrect PIN","error");}catch(e){flash("Error: "+e.message,"error");}showLoading(false);
 }
-function adminLogout(){document.getElementById("admin-login").classList.remove("hidden");document.getElementById("admin-dashboard").classList.add("hidden");document.getElementById("admin-pin").value="";}
+function adminLogout(){staffPin = null;document.getElementById("admin-login").classList.remove("hidden");document.getElementById("admin-dashboard").classList.add("hidden");document.getElementById("admin-pin").value="";}
 
 // Admin: Clubs
 function renderAdminClubs(){document.getElementById("adm-club-list").innerHTML=STATE.clubs.map(c=>{const n=STATE.logs.filter(l=>l.club===c.name).length;return`<div class="row divider"><div><span class="fw600">${esc(c.name)}</span> <span class="badge gray-b">${n} logs</span></div><button class="btn-outline red" onclick="adminDeleteClub('${c.id}','${esc(c.name)}')">Delete</button></div>`;}).join("");}
@@ -457,7 +676,7 @@ function renderAdminLogs(){
   const filtered=logFilter==="all"?STATE.logs:STATE.logs.filter(l=>l.club===logFilter);const el=document.getElementById("adm-log-list");
   if(!filtered.length){el.innerHTML='<p class="text-gray text-sm">No logs.</p>';return;}
   const rows=[...filtered].slice(0,50);
-  el.innerHTML=`<table><thead><tr><th>Student</th><th>Club</th><th>Event</th><th>Hours</th><th></th></tr></thead><tbody>`+rows.map(l=>{const h=l.checkOut?((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2):"—";return`<tr><td><div class="fw600" style="font-size:13px">${esc(l.studentName)}</div><div class="text-xs text-gray">${l.studentId}</div></td><td><span class="badge silver">${esc(l.club)}</span></td><td><div style="font-size:13px">${esc(l.eventName)}</div><div class="text-xs text-gray">${new Date(l.checkIn).toLocaleDateString()}</div></td><td style="font-size:13px">${h}${l.manualEdit?' <span class="text-xs" style="color:var(--silver-light)">edited</span>':''}${l.bulkEntry?' <span class="text-xs text-gray">bulk</span>':''}${!l.checkOut?' <span class="badge green">Live</span>':''}</td><td><div class="flex" style="gap:4px">${l.checkOut?`<button class="btn-outline" onclick="adminEditLog('${l.id}',${h})">Edit</button>`:''}<button class="btn-outline red" onclick="adminDeleteLog('${l.id}')">✕</button></div></td></tr>`;}).join("")+`</tbody></table>`+(filtered.length>50?`<p class="text-gray text-xs mt">Showing 50 of ${filtered.length}</p>`:"");
+  el.innerHTML=`<table><thead><tr><th>Student</th><th>Club</th><th>Event</th><th>Hours</th><th>Photos</th><th></th></tr></thead><tbody>`+rows.map(l=>{const h=l.checkOut?((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2):"—";return`<tr><td><div class="fw600" style="font-size:13px">${esc(l.studentName)}</div><div class="text-xs text-gray">${l.studentId}</div></td><td><span class="badge silver">${esc(l.club)}</span></td><td><div style="font-size:13px">${esc(l.eventName)}</div><div class="text-xs text-gray">${new Date(l.checkIn).toLocaleDateString()}</div></td><td style="font-size:13px">${h}${l.manualEdit?' <span class="text-xs" style="color:var(--silver-light)">edited</span>':''}${l.bulkEntry?' <span class="text-xs text-gray">bulk</span>':''}${!l.checkOut?' <span class="badge green">Live</span>':''}</td><td style="white-space:nowrap">${photoIcons(l)}</td><td><div class="flex" style="gap:4px">${l.checkOut?`<button class="btn-outline" onclick="adminEditLog('${l.id}',${h})">Edit</button>`:''}<button class="btn-outline red" onclick="adminDeleteLog('${l.id}')">✕</button></div></td></tr>`;}).join("")+`</tbody></table>`+(filtered.length>50?`<p class="text-gray text-xs mt">Showing 50 of ${filtered.length}</p>`:"");
 }
 function setLogFilter(c){logFilter=c;renderAdminLogs();}
 async function adminEditLog(id,cur){const n=prompt("Enter new hours:",cur);if(n===null)return;const h=parseFloat(n);if(isNaN(h)||h<0)return flash("Invalid hours.","error");showLoading(true);try{const r=await api("PUT","/logs/"+id,{hours:h});if(r.success){const l=STATE.logs.find(l=>l.id===id);if(l){l.checkOut=r.checkOut;l.manualEdit=true;}renderAdminLogs();flash("Updated!");}}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
@@ -487,7 +706,6 @@ function renderAdminStudents(){const el=document.getElementById("adm-student-lis
 
 // Admin: Roster Upload
 function parseRosterPaste(text) {
-  // Try tab-separated first (Excel/Sheets default), then comma, then multi-space
   const out = [];
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   for (const line of lines) {
@@ -497,7 +715,6 @@ function parseRosterPaste(text) {
     else parts = line.split(/\s{2,}/);
     parts = parts.map(p => p.trim()).filter(Boolean);
     if (parts.length < 2) continue;
-    // Figure out which part is the ID (mostly digits, 4+ chars) and which is the name
     let idPart = null, nameParts = [];
     for (const p of parts) {
       if (idPart === null && /^\d{4,}$/.test(p.replace(/\D/g, "")) && p.replace(/\D/g, "").length >= 4) {
@@ -507,7 +724,6 @@ function parseRosterPaste(text) {
       }
     }
     if (!idPart || !nameParts.length) continue;
-    // Name might be "Last, First" already (one cell with a comma) or "First Last" or split across two cells
     let name = nameParts.join(" ").replace(/\s+/g, " ").trim();
     out.push({ id: idPart, name });
   }
@@ -540,7 +756,6 @@ function previewRoster() {
 }
 async function uploadRoster() {
   if (!parsedRoster.length) {
-    // Auto-preview if they skipped that step
     previewRoster();
     if (!parsedRoster.length) return;
   }
@@ -568,8 +783,8 @@ function renderAdminExport(){document.getElementById("adm-export-btns").innerHTM
 function exportClub(clubName){
   const completed=clubName==="__all__"?STATE.logs.filter(l=>l.checkOut):STATE.logs.filter(l=>l.club===clubName&&l.checkOut);
   if(!completed.length)return flash("No completed logs"+(clubName!=="__all__"?" for "+clubName:"")+".","error");
-  const header=["Student Name","Student ID","Club","Event","Date","Check In","Check Out","Hours"];
-  const rows=completed.sort((a,b)=>a.studentName.localeCompare(b.studentName)).map(l=>{const h=((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2);return[l.studentName,l.studentId,l.club,l.eventName,new Date(l.checkIn).toLocaleDateString(),fmtTime(l.checkIn),fmtTime(l.checkOut),h];});
+  const header=["Student Name","Student ID","Club","Event","Date","Check In","Check Out","Hours","Selfie","Event Photo"];
+  const rows=completed.sort((a,b)=>a.studentName.localeCompare(b.studentName)).map(l=>{const h=((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2);return[l.studentName,l.studentId,l.club,l.eventName,new Date(l.checkIn).toLocaleDateString(),fmtTime(l.checkIn),fmtTime(l.checkOut),h,l.hasSelfie?"Yes":"No",l.hasEventPhoto?"Yes":"No"];});
   const summary={};rows.forEach(r=>{const k=r[0]+"|"+r[1];if(!summary[k])summary[k]={name:r[0],id:r[1],total:0,events:0};summary[k].total+=parseFloat(r[7]);summary[k].events+=1;});
   const label=clubName==="__all__"?"All_Clubs":clubName;
   let csv=label+" - DETAILED LOG\n"+header.join(",")+"\n";rows.forEach(r=>csv+=r.map(c=>'"'+c+'"').join(",")+"\n");
