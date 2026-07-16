@@ -425,12 +425,17 @@ app.post("/api/photos", async (req, res) => {
 
     // Confirm the log exists (and belongs to the correct student in principle,
     // though we don't have auth on the check-in side, so this is best-effort)
-    const logRes = await db.execute({
-      sql: "SELECT studentId FROM logs WHERE id = ?",
+   const logRes = await db.execute({
+      sql: "SELECT studentId, eventName, checkIn FROM logs WHERE id = ?",
       args: [logId],
     });
     if (!logRes.rows.length) return res.status(404).json({ error: "Log not found" });
     const studentId = logRes.rows[0].studentId;
+    const eventName = String(logRes.rows[0].eventName || "Unknown_Event");
+    const eventDate = String(logRes.rows[0].checkIn || new Date().toISOString()).slice(0, 10);
+    // Build a filesystem-safe folder name: "2026-04-29_Suzy_Foundation_Walk"
+    const safeEventName = eventName.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "") || "Event";
+    const eventFolder = `${eventDate}_${safeEventName}`;
 
     const uploadOne = async (dataUrl, label) => {
       if (!dataUrl) return null;
@@ -446,8 +451,7 @@ app.post("/api/photos", async (req, res) => {
       }
 
       const ext = contentType.split("/")[1] || "jpg";
-      const key = `${studentId}/${logId}-${label}-${uid()}.${ext}`;
-
+      const key = `${eventFolder}/${studentId}-${label}-${uid()}.${ext}`;
       await r2.send(new PutObjectCommand({
         Bucket: R2_BUCKET,
         Key: key,
