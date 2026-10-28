@@ -188,11 +188,17 @@
 
 <div id="view-checkout" class="card hidden">
   <h2>Check Out</h2>
-  <label class="label">Your Student ID</label>
-  <input type="text" id="co-id" placeholder="Student ID number" oninput="showOpenLogs()">
-  <div id="co-checkout-all" class="hidden mb"></div>
-  <div id="co-my-open"></div>
-  <div id="co-all-open" class="mt"></div>
+  <p class="text-gray text-sm mb">Tap your name below to check out.</p>
+  <div id="co-checked-in-list"></div>
+  <div id="co-selected-student" class="hidden mt"></div>
+  <div class="mt" style="border-top:1px solid rgba(255,255,255,0.08);padding-top:14px;margin-top:18px">
+    <button class="btn-outline" onclick="toggleCoIdFallback()" id="co-id-toggle-btn" style="font-size:11px">Can't find your name? Use Student ID</button>
+    <div id="co-id-fallback" class="hidden mt">
+      <label class="label">Your Student ID</label>
+      <input type="text" id="co-id" placeholder="Student ID number" oninput="showOpenLogsById()">
+      <div id="co-id-results"></div>
+    </div>
+  </div>
 </div>
 
 <div id="view-hours" class="card hidden">
@@ -256,8 +262,10 @@
     </div>
     <div id="admin-tab-logs" class="hidden">
       <div id="adm-log-filter-bar" class="flex mb"></div>
+      <input type="text" id="adm-log-search" placeholder="Search by student name..." oninput="logSearch=this.value;logPage=0;renderAdminLogs();" style="margin-bottom:8px">
       <button class="btn-outline mb" onclick="forceCheckOutAll()">Force Check Out All</button>
       <div id="adm-log-list" style="overflow-x:auto"></div>
+      <div id="adm-log-pagination" class="flex mt" style="justify-content:center;align-items:center;gap:12px"></div>
     </div>
     <div id="admin-tab-bulk" class="hidden">
       <p class="text-gray text-sm mb">Award hours to multiple students at once without them needing to check in.</p>
@@ -339,7 +347,7 @@ Gonzales, Reva&#9;26100230</code>
 <script>
 // ═══ STATE ═══
 let STATE = { clubs: [], events: [], students: [], logs: [] };
-let currentView = "checkin", adminTab = "clubs", logFilter = "all";
+let currentView = "checkin", adminTab = "clubs", logFilter = "all", logPage = 0, logSearch = "";
 let ciSelectedClubs = [], offEventClubs = [], admEventClubs = [], bulkSelectedStudents = [];
 let hrsFilterClub = "all", useCustomEvent = false;
 let parsedRoster = [];
@@ -450,19 +458,57 @@ async function doCheckIn() {
 }
 
 // ═══ CHECK OUT ═══
-function renderCheckOut() { showOpenLogs(); }
-function showOpenLogs() {
+function renderCheckOut() { renderCheckedInList(); }
+function toggleCoIdFallback() {
+  const el=document.getElementById("co-id-fallback");
+  el.classList.toggle("hidden");
+}
+function renderCheckedInList() {
+  const open=STATE.logs.filter(l=>!l.checkOut);
+  const el=document.getElementById("co-checked-in-list");
+  document.getElementById("co-selected-student").classList.add("hidden");
+  if(!open.length){el.innerHTML='<p class="text-gray text-sm" style="padding:12px 0">No one is currently checked in.</p>';return;}
+  // Group by student
+  const byStudent={};
+  open.forEach(l=>{
+    if(!byStudent[l.studentId]) byStudent[l.studentId]={name:l.studentName,id:l.studentId,logs:[]};
+    byStudent[l.studentId].logs.push(l);
+  });
+  const students=Object.values(byStudent).sort((a,b)=>a.name.localeCompare(b.name));
+  el.innerHTML=`<div class="label mb">Currently Checked In (${students.length} students)</div>`+
+    students.map(s=>{
+      const clubs=[...new Set(s.logs.map(l=>l.club))];
+      return`<button class="dark-box" style="width:100%;text-align:left;border:1.5px solid rgba(255,255,255,0.1);cursor:pointer;margin-bottom:6px" onclick="selectCheckoutStudent('${s.id}')">
+        <div class="row" style="padding:0"><div><span class="fw700" style="font-size:15px">${esc(s.name)}</span>
+        <div class="flex" style="gap:4px;margin-top:4px">${clubs.map(c=>`<span class="badge silver">${esc(c)}</span>`).join("")}</div></div>
+        <span class="badge green">${s.logs.length} active</span></div></button>`;
+    }).join("");
+}
+function selectCheckoutStudent(sid) {
+  const open=STATE.logs.filter(l=>!l.checkOut&&l.studentId===sid);
+  if(!open.length)return;
+  const el=document.getElementById("co-selected-student");
+  el.classList.remove("hidden");
+  const name=open[0].studentName;
+  el.innerHTML=`<div class="dark-box" style="border:1.5px solid var(--green);background:rgba(39,174,96,0.08)">
+    <div class="row mb" style="padding:0"><h2 style="margin:0;font-size:17px">${esc(name)}</h2>
+    <button class="btn-outline" onclick="renderCheckedInList()" style="font-size:11px">← Back</button></div>`+
+    (open.length>1?`<button class="btn-green" style="margin-bottom:10px" onclick="doCheckOut([${open.map(l=>"'"+l.id+"'").join(",")}])">Check Out All (${open.length})</button>`:'')+
+    open.map(l=>{const el=((Date.now()-new Date(l.checkIn).getTime())/3600000).toFixed(2);
+      return`<div style="padding:8px 0;border-top:1px solid rgba(255,255,255,0.08)"><div class="row" style="padding:0"><div><span class="fw600" style="font-size:14px">${esc(l.eventName)}</span> <span class="badge silver">${esc(l.club)}</span></div><span class="text-gray text-xs">${el} hrs</span></div>
+      <button class="btn-green" style="margin-top:8px" onclick="doCheckOut(['${l.id}'])">Check Out</button></div>`;
+    }).join("")+`</div>`;
+  // Scroll to selection
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+// Fallback: search by student ID
+function showOpenLogsById() {
   const sid=document.getElementById("co-id").value.trim();
-  const open=STATE.logs.filter(l=>!l.checkOut), myOpen=sid?open.filter(l=>l.studentId===sid):[];
-  const coAll=document.getElementById("co-checkout-all"), coMy=document.getElementById("co-my-open");
-  if (sid&&!myOpen.length) { coAll.classList.add("hidden"); coMy.innerHTML='<p class="text-gray text-sm">No active check-ins for this ID.</p>'; }
-  else if (myOpen.length) {
-    if (myOpen.length>1) { coAll.classList.remove("hidden"); coAll.innerHTML=`<button class="btn-green" onclick="doCheckOut([${myOpen.map(l=>"'"+l.id+"'").join(",")}])">Check Out All (${myOpen.length})</button>`; } else coAll.classList.add("hidden");
-    coMy.innerHTML=myOpen.map(l=>{const el=((Date.now()-new Date(l.checkIn).getTime())/3600000).toFixed(2);return`<div class="dark-box"><div class="row"><div><span class="fw700" style="font-size:14px">${esc(l.eventName)}</span> <span class="badge silver">${esc(l.club)}</span></div><span class="text-gray text-xs">${el} hrs</span></div><button class="btn-green" style="margin-top:10px" onclick="doCheckOut(['${l.id}'])">Check Out</button></div>`;}).join("");
-  } else { coAll.classList.add("hidden"); coMy.innerHTML=""; }
-  const allEl=document.getElementById("co-all-open");
-  if (open.length) allEl.innerHTML=`<div class="label mb">Currently Checked In (${open.length})</div>`+open.slice(0,20).map(l=>`<div class="row divider" style="font-size:13px"><span>${esc(l.studentName)}</span><span class="text-gray">${esc(l.club)} — ${esc(l.eventName)}</span></div>`).join("")+(open.length>20?`<p class="text-gray text-xs">+ ${open.length-20} more</p>`:"");
-  else allEl.innerHTML="";
+  const el=document.getElementById("co-id-results");
+  if(!sid){el.innerHTML="";return;}
+  const open=STATE.logs.filter(l=>!l.checkOut&&l.studentId===sid);
+  if(!open.length){el.innerHTML='<p class="text-gray text-sm">No active check-ins for this ID.</p>';return;}
+  selectCheckoutStudent(sid);
 }
 async function doCheckOut(ids) {
   showLoading(true);
@@ -672,15 +718,22 @@ async function adminToggleEvent(id){showLoading(true);try{await api("PUT","/even
 async function adminDeleteEvent(id){if(!confirm("Delete event?"))return;showLoading(true);try{await api("DELETE","/events/"+id);STATE.events=STATE.events.filter(e=>e.id!==id);renderAdminEvents();}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
 
 // Admin: Logs
+const LOG_PAGE_SIZE = 50;
 function renderAdminLogs(){
   const bar=document.getElementById("adm-log-filter-bar");
   bar.innerHTML=`<button class="btn-outline ${logFilter==='all'?'active':''}" onclick="setLogFilter('all')">All</button>`+STATE.clubs.map(c=>`<button class="btn-outline ${logFilter===c.name?'active':''}" onclick="setLogFilter('${esc(c.name)}')">${esc(c.name)}</button>`).join("");
-  const filtered=logFilter==="all"?STATE.logs:STATE.logs.filter(l=>l.club===logFilter);const el=document.getElementById("adm-log-list");
-  if(!filtered.length){el.innerHTML='<p class="text-gray text-sm">No logs.</p>';return;}
-  const rows=[...filtered].slice(0,50);
-  el.innerHTML=`<table><thead><tr><th>Student</th><th>Club</th><th>Event</th><th>Hours</th><th>Photos</th><th></th></tr></thead><tbody>`+rows.map(l=>{const h=l.checkOut?((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2):"—";return`<tr><td><div class="fw600" style="font-size:13px">${esc(l.studentName)}</div><div class="text-xs text-gray">${l.studentId}</div></td><td><span class="badge silver">${esc(l.club)}</span></td><td><div style="font-size:13px">${esc(l.eventName)}</div><div class="text-xs text-gray">${new Date(l.checkIn).toLocaleDateString()}</div></td><td style="font-size:13px">${h}${l.manualEdit?' <span class="text-xs" style="color:var(--silver-light)">edited</span>':''}${l.bulkEntry?' <span class="text-xs text-gray">bulk</span>':''}${!l.checkOut?' <span class="badge green">Live</span>':''}</td><td style="white-space:nowrap">${photoIcons(l)}</td><td><div class="flex" style="gap:4px">${l.checkOut?`<button class="btn-outline" onclick="adminEditLog('${l.id}',${h})">Edit</button>`:''}<button class="btn-outline red" onclick="adminDeleteLog('${l.id}')">✕</button></div></td></tr>`;}).join("")+`</tbody></table>`+(filtered.length>50?`<p class="text-gray text-xs mt">Showing 50 of ${filtered.length}</p>`:"");
+  let filtered=logFilter==="all"?STATE.logs:STATE.logs.filter(l=>l.club===logFilter);
+  if(logSearch.trim()){const q=logSearch.toLowerCase();filtered=filtered.filter(l=>l.studentName.toLowerCase().includes(q)||l.studentId.includes(q));}
+  const el=document.getElementById("adm-log-list");
+  if(!filtered.length){el.innerHTML='<p class="text-gray text-sm">No logs'+(logSearch?' matching "'+esc(logSearch)+'"':'')+'. </p>';document.getElementById("adm-log-pagination").innerHTML="";return;}
+  const totalPages=Math.ceil(filtered.length/LOG_PAGE_SIZE);
+  if(logPage>=totalPages)logPage=totalPages-1;if(logPage<0)logPage=0;
+  const start=logPage*LOG_PAGE_SIZE,rows=filtered.slice(start,start+LOG_PAGE_SIZE);
+  el.innerHTML=`<table><thead><tr><th>Student</th><th>Club</th><th>Event</th><th>Hours</th><th>Photos</th><th></th></tr></thead><tbody>`+rows.map(l=>{const h=l.checkOut?((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2):"—";return`<tr><td><div class="fw600" style="font-size:13px">${esc(l.studentName)}</div><div class="text-xs text-gray">${l.studentId}</div></td><td><span class="badge silver">${esc(l.club)}</span></td><td><div style="font-size:13px">${esc(l.eventName)}</div><div class="text-xs text-gray">${new Date(l.checkIn).toLocaleDateString()}</div></td><td style="font-size:13px">${h}${l.manualEdit?' <span class="text-xs" style="color:var(--silver-light)">edited</span>':''}${l.bulkEntry?' <span class="text-xs text-gray">bulk</span>':''}${!l.checkOut?' <span class="badge green">Live</span>':''}</td><td style="white-space:nowrap">${photoIcons(l)}</td><td><div class="flex" style="gap:4px">${l.checkOut?`<button class="btn-outline" onclick="adminEditLog('${l.id}',${h})">Edit</button>`:''}<button class="btn-outline red" onclick="adminDeleteLog('${l.id}')">✕</button></div></td></tr>`;}).join("")+`</tbody></table>`;
+  const pag=document.getElementById("adm-log-pagination");
+  if(totalPages>1){pag.innerHTML=`<button class="btn-outline" onclick="logPage--;renderAdminLogs()" ${logPage===0?'disabled style="opacity:0.4;cursor:not-allowed"':''}>← Prev</button><span class="text-sm text-gray">Page ${logPage+1} of ${totalPages} (${filtered.length} entries)</span><button class="btn-outline" onclick="logPage++;renderAdminLogs()" ${logPage>=totalPages-1?'disabled style="opacity:0.4;cursor:not-allowed"':''}>Next →</button>`;}else{pag.innerHTML=`<span class="text-xs text-gray">${filtered.length} entries</span>`;}
 }
-function setLogFilter(c){logFilter=c;renderAdminLogs();}
+function setLogFilter(c){logFilter=c;logPage=0;renderAdminLogs();}
 async function adminEditLog(id,cur){const n=prompt("Enter new hours:",cur);if(n===null)return;const h=parseFloat(n);if(isNaN(h)||h<0)return flash("Invalid hours.","error");showLoading(true);try{const r=await api("PUT","/logs/"+id,{hours:h});if(r.success){const l=STATE.logs.find(l=>l.id===id);if(l){l.checkOut=r.checkOut;l.manualEdit=true;}renderAdminLogs();flash("Updated!");}}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
 async function adminDeleteLog(id){if(!confirm("Delete this log entry?"))return;showLoading(true);try{await api("DELETE","/logs/"+id);STATE.logs=STATE.logs.filter(l=>l.id!==id);renderAdminLogs();}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
 async function forceCheckOutAll(){const open=(logFilter==="all"?STATE.logs:STATE.logs.filter(l=>l.club===logFilter)).filter(l=>!l.checkOut);if(!open.length)return flash("No open check-ins.","error");if(!confirm("Force check out "+open.length+" students?"))return;showLoading(true);try{const r=await api("POST","/force-checkout",{clubFilter:logFilter});if(r.success){await loadAllData();flash(r.count+" checked out.");}}catch(e){flash("Error: "+e.message,"error");}showLoading(false);}
