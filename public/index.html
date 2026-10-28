@@ -205,8 +205,8 @@
   <h2>My Hours</h2>
   <label class="label">Your Student ID</label>
   <input type="text" id="hrs-id" placeholder="Student ID number" oninput="showMyHours()">
+  <div id="hrs-club-totals" class="hidden mb"></div>
   <div id="hrs-club-filters" class="flex mb hidden"></div>
-  <div id="hrs-total" class="hidden"></div>
   <div id="hrs-list"></div>
 </div>
 
@@ -263,6 +263,7 @@
     <div id="admin-tab-logs" class="hidden">
       <div id="adm-log-filter-bar" class="flex mb"></div>
       <input type="text" id="adm-log-search" placeholder="Search by student name..." oninput="logSearch=this.value;logPage=0;renderAdminLogs();" style="margin-bottom:8px">
+      <div id="adm-attendance-flags"></div>
       <button class="btn-outline mb" onclick="forceCheckOutAll()">Force Check Out All</button>
       <div id="adm-log-list" style="overflow-x:auto"></div>
       <div id="adm-log-pagination" class="flex mt" style="justify-content:center;align-items:center;gap:12px"></div>
@@ -644,16 +645,20 @@ function photoIcons(log) {
 function renderHoursView(){showMyHours();}
 function showMyHours(){
   const sid=document.getElementById("hrs-id").value.trim();
-  if(!sid){document.getElementById("hrs-club-filters").classList.add("hidden");document.getElementById("hrs-total").classList.add("hidden");document.getElementById("hrs-list").innerHTML="";return;}
+  const totalsEl=document.getElementById("hrs-club-totals"), fEl=document.getElementById("hrs-club-filters"), lEl=document.getElementById("hrs-list");
+  if(!sid){totalsEl.classList.add("hidden");fEl.classList.add("hidden");lEl.innerHTML="";return;}
   const completed=STATE.logs.filter(l=>l.checkOut&&l.studentId===sid);
+  // Calculate per-club hours
   const byClub={};completed.forEach(l=>{if(!byClub[l.club])byClub[l.club]=0;byClub[l.club]+=(new Date(l.checkOut)-new Date(l.checkIn))/3600000;});
+  const clubNames=Object.keys(byClub).sort();
+  // Show per-club breakdown cards (no misleading combined total)
+  if(clubNames.length){
+    totalsEl.classList.remove("hidden");
+    totalsEl.innerHTML=clubNames.map(c=>`<div class="highlight-box" style="margin-bottom:8px"><div class="row" style="padding:0"><span class="fw700" style="color:var(--silver-light);text-transform:uppercase;font-size:12px;letter-spacing:1px">${esc(c)}</span><span style="font-size:24px;font-weight:800;color:var(--white)">${byClub[c].toFixed(1)}h</span></div></div>`).join("");
+  } else totalsEl.classList.add("hidden");
+  // Club filter buttons
+  if(clubNames.length>1){fEl.classList.remove("hidden");fEl.innerHTML=`<button class="btn-outline ${hrsFilterClub==='all'?'active':''}" onclick="setHrsFilter('all')">All Entries</button>`+clubNames.map(c=>`<button class="btn-outline ${hrsFilterClub===c?'active':''}" onclick="setHrsFilter('${esc(c)}')">${esc(c)}</button>`).join("");}else{fEl.classList.add("hidden");hrsFilterClub="all";}
   const filtered=hrsFilterClub==="all"?completed:completed.filter(l=>l.club===hrsFilterClub);
-  const total=filtered.reduce((s,l)=>s+(new Date(l.checkOut)-new Date(l.checkIn))/3600000,0);
-  const fEl=document.getElementById("hrs-club-filters");
-  if(Object.keys(byClub).length){fEl.classList.remove("hidden");fEl.innerHTML=`<button class="btn-outline ${hrsFilterClub==='all'?'active':''}" onclick="setHrsFilter('all')">All</button>`+Object.entries(byClub).map(([c,h])=>`<button class="btn-outline ${hrsFilterClub===c?'active':''}" onclick="setHrsFilter('${esc(c)}')">${esc(c)} (${h.toFixed(1)}h)</button>`).join("");}else fEl.classList.add("hidden");
-  const tEl=document.getElementById("hrs-total");tEl.classList.remove("hidden");
-  tEl.innerHTML=`<div class="highlight-box row"><span class="fw700" style="color:var(--silver-light);text-transform:uppercase;font-size:12px;letter-spacing:1px">${hrsFilterClub==="all"?"Total Hours":esc(hrsFilterClub)}</span><span style="font-size:26px;font-weight:800;color:var(--white)">${total.toFixed(1)}</span></div>`;
-  const lEl=document.getElementById("hrs-list");
   if(!filtered.length){lEl.innerHTML='<p class="text-gray text-sm" style="margin-top:12px">No completed hours found.</p>';return;}
   lEl.innerHTML=filtered.sort((a,b)=>new Date(b.checkIn)-new Date(a.checkIn)).map(l=>{const h=((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2);return`<div class="divider" style="padding:10px 0"><div class="row"><div><span class="fw600" style="font-size:14px">${esc(l.eventName)}</span> <span class="badge silver">${esc(l.club)}</span></div><span class="fw700" style="color:var(--white)">${h}h</span></div><div class="text-xs text-gray" style="margin-top:3px">${new Date(l.checkIn).toLocaleDateString()} &bull; ${fmtTime(l.checkIn)} – ${fmtTime(l.checkOut)}${l.bulkEntry?' <em>manual entry</em>':''}${(l.hasSelfie||l.hasEventPhoto)?' &bull; <span style="color:var(--green-light)">📷 photos submitted</span>':''}</div></div>`;}).join("");
 }
@@ -719,7 +724,20 @@ async function adminDeleteEvent(id){if(!confirm("Delete event?"))return;showLoad
 
 // Admin: Logs
 const LOG_PAGE_SIZE = 50;
+function renderAttendanceFlags(){
+  const el=document.getElementById("adm-attendance-flags");
+  const open=STATE.logs.filter(l=>!l.checkOut);
+  if(!open.length){el.innerHTML="";return;}
+  // Group by student
+  const byStudent={};open.forEach(l=>{const k=l.studentId;if(!byStudent[k])byStudent[k]={name:l.studentName,id:l.studentId,entries:[]};byStudent[k].entries.push(l);});
+  const students=Object.values(byStudent).sort((a,b)=>a.name.localeCompare(b.name));
+  // Flag old check-ins (>6 hours) as likely forgotten
+  const now=Date.now(),SIX_H=6*3600000;
+  const forgotten=students.filter(s=>s.entries.some(e=>(now-new Date(e.checkIn).getTime())>SIX_H));
+  el.innerHTML=`<div style="background:rgba(255,180,0,0.08);border:1px solid rgba(255,180,0,0.25);border-radius:12px;padding:14px 16px;margin-bottom:14px"><div class="row" style="margin-bottom:8px"><span class="fw700" style="color:#ffb400;font-size:14px">⚠ ${open.length} open check-in${open.length>1?'s':''} (${students.length} student${students.length>1?'s':''})</span>${forgotten.length?`<span class="text-xs" style="color:#ff6b6b">${forgotten.length} likely forgotten (6h+)</span>`:''}</div><div style="display:flex;flex-wrap:wrap;gap:6px">${students.map(s=>{const old=s.entries.some(e=>(now-new Date(e.checkIn).getTime())>SIX_H);return`<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.06);border-radius:8px;padding:4px 10px;font-size:12px;${old?'border:1px solid rgba(255,100,100,0.4);color:#ff8a8a':'border:1px solid rgba(255,255,255,0.08);color:var(--silver-light)'}">${esc(s.name)} <span class="text-xs text-gray">${s.entries.map(e=>esc(e.club)).join(', ')}</span>${old?' 🕐':''}</span>`;}).join("")}</div></div>`;
+}
 function renderAdminLogs(){
+  renderAttendanceFlags();
   const bar=document.getElementById("adm-log-filter-bar");
   bar.innerHTML=`<button class="btn-outline ${logFilter==='all'?'active':''}" onclick="setLogFilter('all')">All</button>`+STATE.clubs.map(c=>`<button class="btn-outline ${logFilter===c.name?'active':''}" onclick="setLogFilter('${esc(c.name)}')">${esc(c.name)}</button>`).join("");
   let filtered=logFilter==="all"?STATE.logs:STATE.logs.filter(l=>l.club===logFilter);
@@ -729,7 +747,7 @@ function renderAdminLogs(){
   const totalPages=Math.ceil(filtered.length/LOG_PAGE_SIZE);
   if(logPage>=totalPages)logPage=totalPages-1;if(logPage<0)logPage=0;
   const start=logPage*LOG_PAGE_SIZE,rows=filtered.slice(start,start+LOG_PAGE_SIZE);
-  el.innerHTML=`<table><thead><tr><th>Student</th><th>Club</th><th>Event</th><th>Hours</th><th>Photos</th><th></th></tr></thead><tbody>`+rows.map(l=>{const h=l.checkOut?((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2):"—";return`<tr><td><div class="fw600" style="font-size:13px">${esc(l.studentName)}</div><div class="text-xs text-gray">${l.studentId}</div></td><td><span class="badge silver">${esc(l.club)}</span></td><td><div style="font-size:13px">${esc(l.eventName)}</div><div class="text-xs text-gray">${new Date(l.checkIn).toLocaleDateString()}</div></td><td style="font-size:13px">${h}${l.manualEdit?' <span class="text-xs" style="color:var(--silver-light)">edited</span>':''}${l.bulkEntry?' <span class="text-xs text-gray">bulk</span>':''}${!l.checkOut?' <span class="badge green">Live</span>':''}</td><td style="white-space:nowrap">${photoIcons(l)}</td><td><div class="flex" style="gap:4px">${l.checkOut?`<button class="btn-outline" onclick="adminEditLog('${l.id}',${h})">Edit</button>`:''}<button class="btn-outline red" onclick="adminDeleteLog('${l.id}')">✕</button></div></td></tr>`;}).join("")+`</tbody></table>`;
+  el.innerHTML=`<table><thead><tr><th>Student</th><th>Club</th><th>Event</th><th>Hours</th><th>Photos</th><th></th></tr></thead><tbody>`+rows.map(l=>{const h=l.checkOut?((new Date(l.checkOut)-new Date(l.checkIn))/3600000).toFixed(2):"—";return`<tr><td><div class="fw600" style="font-size:13px">${esc(l.studentName)}</div><div class="text-xs text-gray">${l.studentId}</div></td><td><span class="badge silver">${esc(l.club)}</span></td><td><div style="font-size:13px">${esc(l.eventName)}</div><div class="text-xs text-gray">${new Date(l.checkIn).toLocaleDateString()}</div></td><td style="font-size:13px">${h}${l.manualEdit?' <span class="text-xs" style="color:var(--silver-light)">edited</span>':''}${l.bulkEntry?' <span class="text-xs text-gray">bulk</span>':''}${!l.checkOut?((Date.now()-new Date(l.checkIn).getTime())>6*3600000?' <span class="badge" style="background:rgba(255,100,100,0.15);color:#ff8a8a">⚠ Forgotten?</span>':' <span class="badge green">Live</span>'):''}</td><td style="white-space:nowrap">${photoIcons(l)}</td><td><div class="flex" style="gap:4px">${l.checkOut?`<button class="btn-outline" onclick="adminEditLog('${l.id}',${h})">Edit</button>`:''}<button class="btn-outline red" onclick="adminDeleteLog('${l.id}')">✕</button></div></td></tr>`;}).join("")+`</tbody></table>`;
   const pag=document.getElementById("adm-log-pagination");
   if(totalPages>1){pag.innerHTML=`<button class="btn-outline" onclick="logPage--;renderAdminLogs()" ${logPage===0?'disabled style="opacity:0.4;cursor:not-allowed"':''}>← Prev</button><span class="text-sm text-gray">Page ${logPage+1} of ${totalPages} (${filtered.length} entries)</span><button class="btn-outline" onclick="logPage++;renderAdminLogs()" ${logPage>=totalPages-1?'disabled style="opacity:0.4;cursor:not-allowed"':''}>Next →</button>`;}else{pag.innerHTML=`<span class="text-xs text-gray">${filtered.length} entries</span>`;}
 }
